@@ -5,8 +5,8 @@
         <h1>大学智慧排课系统</h1>
         <nav>
           <ul>
-            <li ><router-link to="/login">登录</router-link></li>
-            <li ><el-button class="username" type="text" @click="open">{{ username }}</el-button></li>
+            <li ><router-link v-show="!isAuth" to="/login">登录</router-link></li>
+            <li ><el-button class="username" v-show="isAuth" type="text" @click="open">{{ username }}</el-button></li>
           </ul>
         </nav>
       </div>
@@ -15,8 +15,17 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
 export default {
   name: 'Header',
+  data(){
+    return {
+      username:'用户名'
+    }
+  },
+  computed:{
+    ...mapState(['isAuth'])
+  },
   methods: {
     open() {
       this.$alert('是否退出登录？', {
@@ -36,10 +45,18 @@ export default {
 </script>
 
 <style scoped>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden; /* 禁止滚动 */
+}
+
 .site-header {
   background-color: #333;
   color: white;
-  padding: 20px 0;
+  padding: 15px 0;
 }
 
 .container {
