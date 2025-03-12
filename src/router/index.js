@@ -1,6 +1,10 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
-import Arrange from "@/pages/Arrange"
+import ManualArrange from "@/pages/ManualArrange"
+import AutoArrange from "@/pages/AutoArrange"
+import Schedule from "@/pages/Schedule"
+import Course from "@/pages/Course"
+import Input from "@/pages/Input"
 import Login from "@/pages/Login"
 import Home from "@/pages/Home"
 
@@ -16,8 +20,24 @@ Vue.use(VueRouter)
 export default new VueRouter({
   routes: [
     {
-      path: '/arrange',
-      component: Arrange
+      path: '/manual-arrange',
+      component: ManualArrange
+    },
+    {
+      path: '/auto-arrange',
+      component: AutoArrange
+    },
+    {
+      path: '/course',
+      component: Course
+    },
+    {
+      path: '/schedule',
+      component: Schedule
+    },
+    {
+      path: '/input',
+      component: Input
     },
     {
       path: '/login',
