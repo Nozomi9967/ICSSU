@@ -1,42 +1,44 @@
 <template>
   <div>
-    <el-table :data="tableData" border style="width: 100%;height: 720px;">
-      <el-table-column fixed prop="id" label="课程编号" width="100">
+    <el-table :data="tableData" border style="width: 90%;height: 720px;">
+      <el-table-column fixed prop="course_id" label="课程编号" width="100">
       </el-table-column>
-      <el-table-column prop="name" label="课程名称" width="120">
+      <el-table-column prop="course_name" label="课程名称" width="120">
       </el-table-column>
-      <el-table-column prop="category" label="类别" width="100">
+      <!-- <el-table-column prop="category" label="类别" width="100">
+  </el-table-column> -->
+      <el-table-column prop="course_type" label="类型" width="100">
       </el-table-column>
-      <el-table-column prop="attribute" label="属性" width="100">
+      <el-table-column prop="course_property" label="属性" width="100">
       </el-table-column>
-      <el-table-column prop="type" label="类型" width="100">
+      <!-- <el-table-column prop="property" label="性质" width="100">
+  </el-table-column> -->
+      <!-- <el-table-column prop="ename" label="英文名" width="120">
+  </el-table-column> -->
+      <el-table-column prop="course_department" label="开课院系" width="120">
       </el-table-column>
-      <el-table-column prop="property" label="性质" width="100">
+      <!-- <el-table-column prop="on" label="是否启用" width="100">
+    <template slot-scope="scope">
+      <span>{{ scope.row.on? '启用' : '未启用' }}</span>
+    </template>
+</el-table-column> -->
+      <el-table-column prop="pure_practice" label="是否纯实践环节" width="80">
       </el-table-column>
-      <el-table-column prop="ename" label="英文名" width="120">
+      <el-table-column prop="total_hours" label="总学时" width="80">
       </el-table-column>
-      <el-table-column prop="department" label="开课院系" width="120">
+      <el-table-column prop="theory_hours" label="理论学时" width="80">
       </el-table-column>
-      <el-table-column prop="on" label="是否启用" width="100">
-        <template slot-scope="scope">
-          <span>{{ scope.row.on ? '启用' : '未启用' }}</span>
-        </template>
+      <el-table-column prop="test_hours" label="实验学时" width="80">
       </el-table-column>
-      <el-table-column prop="totalHours" label="总学时" width="80">
+      <el-table-column prop="computer_hours" label="上机学时" width="80">
       </el-table-column>
-      <el-table-column prop="theoHours" label="理论学时" width="80">
+      <el-table-column prop="practice_hours" label="实践学时" width="80">
       </el-table-column>
-      <el-table-column prop="experHours" label="实验学时" width="80">
+      <el-table-column prop="other_hours" label="其他学时" width="80">
       </el-table-column>
-      <el-table-column prop="comOperHours" label="上机学时" width="80">
+      <el-table-column prop="course_credit" label="学分" width="80">
       </el-table-column>
-      <el-table-column prop="practicalHours" label="实践学时" width="80">
-      </el-table-column>
-      <el-table-column prop="otherHours" label="其他学时" width="80">
-      </el-table-column>
-      <el-table-column prop="credits" label="学分" width="80">
-      </el-table-column>
-      <el-table-column prop="weeklyHours" label="周学时" width="80">
+      <el-table-column prop="weekly_hours" label="周学时" width="80">
       </el-table-column>
       <el-table-column fixed="right" label="操作" width="100">
         <template slot-scope="scope">
@@ -45,8 +47,9 @@
         </template>
       </el-table-column>
     </el-table>
-    <CourseDialog :courseInfo="courseInfo" :dialogVisible="dialogVisible" :rules="rules" @close="handleClose"
-      @submit="handleSubmit" @reset="handleReset"></CourseDialog>
+    <el-dialog :visible.sync="dialogVisible" :before-close="handleClose">
+      <CourseForm :courseInfo="courseInfo" :rules="rules" @close="handleClose"></CourseForm>
+    </el-dialog>
     <!-- 分页 -->
     <el-pagination background layout="prev, pager, next" :total=Pagi.total :page-size=Pagi.pageSize
       :current-page=Pagi.current>
@@ -55,13 +58,45 @@
 </template>
 
 <script>
-import CourseDialog from "@/pages/CourseDialog"
+import { SERVER_URL, COURSE_PREFIX } from "../../../config"
+import axios from "axios";
+import CourseForm from "@/pages/CourseForm"
 export default {
   name: 'Course',
   components: {
-    CourseDialog
+    CourseForm
+  },
+  mounted() {
+    this.handleGetCourses()
   },
   methods: {
+    handleGetCourses() {
+      // TODO:分页获取客户数据
+      const params = new URLSearchParams()
+      params.append('page', this.Pagi.current)
+      params.append('pagesize', this.Pagi.pageSize)
+      axios.get(`${this.serverUrl}${this.coursePrefix}/querybypage`, {
+        params: params
+      }).then(
+        res => {
+          console.log(res)
+          // 请求成功
+          if (res.status === 200) {
+            this.Pagi.total = res.data.data.total
+            this.tableData = res.data.data.courses
+          } else {
+            this.$message({
+              type: error,
+              message: '数据请求失败'
+            })
+          }
+        }
+      ).catch(
+        err => {
+          console.log(err)
+        }
+      )
+    },
     handleDeleteCourse(row) {
       // console.log(row);
     },
@@ -96,44 +131,56 @@ export default {
       // 表格数据
       tableData: [
         {
-          id: '001',
-          name: '高等数学',
-          category: '基础课程',
-          attribute: '必修',
-          type: '理论课',
-          property: '公共课',
-          ename: 'Advanced Mathematics',
-          department: '数学系',
-          on: true,
-          totalHours: 64,
-          theoHours: 64,
-          experHours: 0,
-          comOperHours: 0,
-          practicalHours: 0,
-          otherHours: 0,
-          credits: 4,
-          weeklyHours: 4
+          "course_id": "003",
+          "course_name": "大学英语",
+          "course_type": "理论课",
+          "course_property": "公共课",
+          "course_credit": 3,
+          "course_department": "外语系",
+          "total_hours": 48,
+          "theory_hours": 40,
+          "test_hours": 0,
+          "computer_hours": 4,
+          "practice_hours": 4,
+          "other_hours": 0,
+          "weekly_hours": 3,
+          "pure_practice": false
         },
         {
-          id: '002',
-          name: '大学物理实验',
-          category: '专业基础课程',
-          attribute: '必修',
-          type: '实验课',
-          property: '专业课',
-          ename: 'College Physics Experiment',
-          department: '物理系',
-          on: true,
-          totalHours: 32,
-          theoHours: 0,
-          experHours: 32,
-          comOperHours: 0,
-          practicalHours: 0,
-          otherHours: 0,
-          credits: 2,
-          weeklyHours: 2
+          "course_id": "004",
+          "course_name": "数据结构与算法",
+          "course_type": "理论课",
+          "course_property": "专业课",
+          "course_credit": 4,
+          "course_department": "计算机系",
+          "total_hours": 64,
+          "theory_hours": 48,
+          "test_hours": 8,
+          "computer_hours": 8,
+          "practice_hours": 0,
+          "other_hours": 0,
+          "weekly_hours": 4,
+          "pure_practice": false
+        },
+        {
+          "course_id": "005",
+          "course_name": "机械制造实践",
+          "course_type": "实践课",
+          "course_property": "专业课",
+          "course_credit": 3,
+          "course_department": "机械系",
+          "total_hours": 40,
+          "theory_hours": 0,
+          "test_hours": 0,
+          "computer_hours": 0,
+          "practice_hours": 40,
+          "other_hours": 0,
+          "weekly_hours": 5,
+          "pure_practice": true
         }
       ],
+      serverUrl: SERVER_URL,
+      coursePrefix: COURSE_PREFIX,
       dialogVisible: false,
       courseInfo: {},
       rules: {
@@ -145,9 +192,6 @@ export default {
           { required: true, message: '请输入课程名称', trigger: 'blur' },
           { min: 2, max: 20, message: '课程名称长度应在 2 到 20 个字符之间', trigger: 'blur' }
         ],
-        startToEndValue: [
-          { required: true, message: '请选择时间范围', trigger: 'change' }
-        ]
       },
       Pagi: {
         // 每页的条目个数
