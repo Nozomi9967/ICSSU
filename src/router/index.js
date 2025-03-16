@@ -3,6 +3,8 @@ import VueRouter from "vue-router";
 import Arrange from "@/pages/Arrange"
 import Login from "@/pages/Login"
 import Home from "@/pages/Home"
+import Usage from "@/pages/Analysis/Usage"
+import Quantity from "@/pages/Analysis/Quantity"
 
 Vue.use(VueRouter)
 
@@ -30,6 +32,14 @@ export default new VueRouter({
     {
       path: '*',
       redirect: '/login'
+    },
+    {
+      path: '/analysis/usage',
+      component: Usage
+    },
+    {
+      path: '/analysis/quantity',
+      component: Quantity
     }
   ]
 })
