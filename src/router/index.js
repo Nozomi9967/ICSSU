@@ -5,8 +5,10 @@ import AutoArrange from "@/pages/AutoArrange"
 import Schedule from "@/pages/Schedule"
 import Course from "@/pages/Course"
 import Input from "@/pages/Input"
+import Flow from "@/pages/Flow"
 import Login from "@/pages/Login"
 import Home from "@/pages/Home"
+import Classroom from "@/pages/Classroom"
 
 Vue.use(VueRouter)
 
@@ -32,12 +34,20 @@ export default new VueRouter({
       component: Course
     },
     {
+      path: '/classroom',
+      component: Classroom
+    },
+    {
       path: '/schedule',
       component: Schedule
     },
     {
       path: '/input',
       component: Input
+    },
+    {
+      path: '/flow',
+      component: Flow
     },
     {
       path: '/login',

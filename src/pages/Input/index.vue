@@ -5,13 +5,15 @@
         <CourseForm :courseInfo="courseInfo" ref="courseFormRef" :rules="rules" @submit="handleSubmitCourseInput"
           @reset="handleCourseReset"></CourseForm>
         <!-- excel输入 -->
-        <el-upload class="upload-demo" :auto-upload="false" drag :action="getCourseFileUploadUrl"
-          :before-upload="handleBeforeUpload" ref="uploadRef" multiple>
-          <i class="el-icon-upload"></i>
-          <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-          <div class="el-upload__tip" slot="tip">只能上传.xlsx/.xls文件，且不超过500kb</div>
-        </el-upload>
-        <el-button size="small" type="primary" @click="handleUpload">上传</el-button>
+        <div class="excel-upload-section">
+          <el-upload class="upload-demo" :auto-upload="false" drag :action="getCourseFileUploadUrl"
+            :before-upload="handleBeforeUpload" ref="uploadRef" multiple>
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+            <div class="el-upload__tip" slot="tip">只能上传.xlsx/.xls文件，且不超过500kb</div>
+          </el-upload>
+          <el-button type="primary" @click="handleUpload">上传<i class="el-icon-upload el-icon--right"></i></el-button>
+        </div>
       </el-tab-pane>
       <el-tab-pane label="配置管理">配置管理</el-tab-pane>
       <el-tab-pane label="角色管理">角色管理</el-tab-pane>
@@ -21,7 +23,7 @@
 </template>
 
 <script>
-import { SERVER_URL, COURSE_PREFIX } from "../../../config"
+import { SERVER_URL, COURSE_PREFIX } from "@config"
 import CourseForm from "@/pages/CourseForm"
 import axios from "axios"
 export default {
@@ -29,17 +31,19 @@ export default {
   components: {
     CourseForm
   },
+  mounted() {
+  },
   data() {
     return {
       serverUrl: SERVER_URL,
       coursePrefix: COURSE_PREFIX,
       courseInfo: {
-        "course_id": "005",
-        "course_name": "机械制造实践",
-        "course_type": "实践课",
-        "course_property": "专业课",
+        "course_id": "570101KB0A08-2",
+        "course_name": "HTML5+JavaScript程 序设计(任选)",
+        "course_type": "B类((理论+实践)课)",
+        "course_property": "专业课选修课",
         "course_credit": 3,
-        "course_department": "机械系",
+        "course_department": "汽车与智能交通学院",
         "total_hours": 40,
         "theory_hours": 0,
         "test_hours": 0,
@@ -56,7 +60,7 @@ export default {
         ],
         course_name: [
           { required: true, message: '请输入课程名称', trigger: 'blur' },
-          { min: 2, max: 20, message: '课程名称长度应在 2 到 20 个字符之间', trigger: 'blur' }
+          { min: 2, max: 22, message: '课程名称长度应在 2 到 22 个字符之间', trigger: 'blur' }
         ],
         course_type: [
           { required: true, message: '请选择课程类型', trigger: 'blur' }
@@ -139,15 +143,13 @@ export default {
               console.log(err)
             }
           )
-
         } else {
           console.log('表单验证失败');
           return false;
         }
       });
     },
-    handleBeforeUpload(file) {
-      // 检查文件类型和大小
+    handleBeforeUpload(file) {// 检查文件类型和大小
       const isXlsx = ['.xlsx', '.xls'].some(ext => file.name.endsWith(ext));
       const isLt500kb = file.size / 1024 < 500;
       if (!isXlsx) {
@@ -166,6 +168,12 @@ export default {
         this.$message.error('请选择要上传的文件');
         return;
       }
+      const loading = this.$loading({
+        lock: true,
+        text: '文件正在上传中，请耐心等待',
+        spinner: 'el-icon-loading',
+        background: 'rgba(0,0,0,0.7)'
+      })
       const formData = new FormData();
       uploadFiles.forEach(file => {
         formData.append('course_file', file.raw);
@@ -177,6 +185,7 @@ export default {
       })
         .then(response => {
           if (response.data.status === 200) {
+            loading.close()
             this.$message({
               type: 'success',
               message: '文件上传成功'
@@ -197,4 +206,12 @@ export default {
 }
 </script>
 
-<style></style>
+<style lang="sass" scoped>
+.excel-upload-section{
+  margin-top: 60px ;
+  text-align: center;
+  .el-button{
+    margin:10px
+  }
+}
+</style>
