@@ -1,24 +1,46 @@
 <template>
-
   <div style="position: relative;">
-    <Calendar style="height: 700px" ref="calendarRef" :view="view" :use-detail-popup="false" :week="week"
-      :calendars="calendars" :events="events" :usage-statistics="false" :time-zone=timezone
-      @selectDateTime="onSelectDateTime" @beforeUpdateEvent="handleBeforeUpdateEvent" @clickEvent="handleClickEvent" />
-    <!-- 新增课程dialog -->
+    <!-- 条件选择区域 -->
+    <div style="margin-top: 15px;margin-bottom: 30px;">
+      <el-input :placeholder="getPlaceholderStr" style="width: 70%;" v-model="searchKeyWord" class="input-with-select">
+        <el-select v-model="selectedDimen" slot="prepend" style="width: 130px;" placeholder="请选择类型">
+          <el-option label="教师" :value="1"></el-option>
+          <el-option label="教室" :value="2"></el-option>
+        </el-select>
+        <el-button slot="append" icon="el-icon-search"></el-button>
+      </el-input>
+    </div>
+    <!-- 日历区域 -->
+    <FullCalendar :options="calendarOptions" ref="calendarRef" />
+    <!-- 课程dialog区域 -->
     <el-dialog title="提示" :close-on-click-modal="false" :visible.sync="dialogVisible" width="60%"
       :before-close="handleClose">
       <el-form :model="courseInfo" ref="formRef">
         <el-form-item label="课程编号" prop="id">
           <el-input v-model="courseInfo.id"></el-input>
         </el-form-item>
-        <el-form-item label="课程名称" prop="name">
+        <!-- <el-form-item label="课程名称" prop="name">
           <el-input v-model="courseInfo.name"></el-input>
-        </el-form-item>
-        <el-form-item label="开始时间 - 结束时间" prop="startToEndValue">
-          <el-time-picker is-range arrow-control v-model="courseInfo.startToEndValue" range-separator="至"
-            start-placeholder="开始时间" end-placeholder="结束时间" placeholder="选择时间范围">
-          </el-time-picker>
-        </el-form-item>
+        </el-form-item> -->
+
+        <!-- 节次区域 -->
+        <!-- <div style="display: flex;flex-wrap: wrap;gap:30px"> -->
+        <!-- 开始节次 -->
+        <!-- <el-form-item prop="startClass" style="flex: 1;min-width: 150px; max-width: 30%;"> -->
+        <!-- <el-select v-model="startClass" placeholder="请选择开始节次" @change="validateSelection"> -->
+        <!-- <el-option v-for="item in classOptions" :key="item.value" :label="item.label" :value="item.value">
+        </el-option> -->
+        <!-- </el-select> -->
+        <!-- </el-form-item> -->
+        <!-- <span style="display: inline-block; line-height: 32px;font-size: 16px;">至</span> -->
+        <!-- 结束节次 -->
+        <!-- <el-form-item prop="endClass" style="flex: 1;min-width: 150px; max-width: 30%;"> -->
+        <!-- <el-select v-model="endClass" placeholder="请选择结束节次" @change="validateSelection"> -->
+        <!-- <el-option v-for="item in classOptions" :key="item.value" :label="item.label" :value="item.value">
+        </el-option> -->
+        <!-- </el-select> -->
+        <!-- </el-form-item> -->
+        <!-- </div> -->
         <el-form-item>
           <el-button @click="handleCreateOrModifyEvent">提交</el-button>
           <el-button @click="handleClose">取消</el-button>
@@ -26,7 +48,7 @@
         </el-form-item>
       </el-form>
     </el-dialog>
-    <!-- 点击日程后的popover弹出框 -->
+    <!-- 点击日程后的popover弹出框区域 -->
     <el-popover v-model="popoverVisible"
       :style="{ left: popoverLeft + 'px', top: popoverTop + 'px', position: 'absolute' }" placement="bottom"
       trigger="manual" :title=selectedEvent.title width="200">
@@ -38,34 +60,137 @@
         </div>
       </div>
     </el-popover>
-    <!-- 遮罩层 -->
+    <!-- 遮罩层区域 -->
     <div v-if="popoverVisible" v-click-outside="closePopover" class="popover-mask"></div>
   </div>
 </template>
 
 <script>
-import Calendar from '@toast-ui/vue-calendar'
-import '@toast-ui/calendar/dist/toastui-calendar.min.css'
+import FullCalendar from '@fullcalendar/vue'
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
+import { addWeeks, startOfYear, getISOWeek } from 'date-fns';
+class Time {
+  constructor(hour = 0, minute = 0) {
+    this.hour = Math.min(23, Math.max(0, hour));
+    this.minute = Math.min(59, Math.max(0, minute));
+  }
 
+  getFormattedTime() {
+    const formattedHour = this.hour.toString().padStart(2, '0');
+    const formattedMinute = this.minute.toString().padStart(2, '0');
+    return `${formattedHour}:${formattedMinute}`;
+  }
+
+  // 比较时分大小的函数
+  compareTo(otherTime) {
+    if (this.hour > otherTime.hour) {
+      return 1;
+    } else if (this.hour < otherTime.hour) {
+      return -1;
+    } else {
+      if (this.minute > otherTime.minute) {
+        return 1;
+      } else if (this.minute < otherTime.minute) {
+        return -1;
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  subtract(otherTime) {
+    const thisTotalMinutes = this.hour * 60 + this.minute;
+    const otherTotalMinutes = otherTime.hour * 60 + otherTime.minute;
+    return Math.abs(thisTotalMinutes - otherTotalMinutes);
+  }
+}
 export default {
   components: {
-    Calendar
+    FullCalendar
   },
   data() {
     return {
+      calendarOptions: {
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+        initialView: 'timeGridWeek',// 开始时的视图为周视图
+        firstDay: 1,// 设置一周从星期一开始
+        selectable: true,// 可框选日期格子
+        editable: true,// 可编辑
+        allDaySlot: false, // 隐藏全天事件栏
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'customTitle',
+          right: 'timeGridWeek'
+        },
+        events: [
+          { title: 'Event 1', date: '2025-03-20' },
+          {
+            title: 'Event 2',
+            start: '2025-03-22T19:20:00',
+            end: '2025-03-22T20:05:00',
+          }
+        ],
+        contentHeight: 'auto', // 动态调整高度
+        validRange: this.calculateDateRange(),// 计算日期范围
+        select: this.handleSelect, // 选择时间段时触发的回调函数
+        eventClick: this.handleClickEvent, // 点击日程的回调函数
+        customButtons: { // 自定义按钮
+          customTitle: { // 自定义标题
+            text: this.getWeekNumberTitle(),
+            click: function () { }
+          }
+        },
+        datesSet: (info) => { // 当日期改变时更新标题
+          const newTitle = this.getWeekNumberTitle(info.start);
+          this.$nextTick(() => {
+            const customTitleElement = this.$refs.calendarRef.$el.querySelector('.fc-customTitle-button');
+            if (customTitleElement) {
+              customTitleElement.textContent = newTitle;
+            }
+          });
+        },
+        eventDrop: this.handleEventDrop,
+        ...this.getDynamicConfig(),
+      },
+      startClass: null,//开始节次
+      endClass: null,//结束节次
+      classOptions: [//节次选项
+        { value: 1, label: '第1节课' },
+        { value: 2, label: '第2节课' },
+        { value: 3, label: '第3节课' },
+        { value: 4, label: '第4节课' },
+        { value: 5, label: '第5节课' },
+        { value: 6, label: '第6节课' },
+        { value: 7, label: '第7节课' },
+        { value: 8, label: '第8节课' },
+        { value: 9, label: '第9节课' },
+        { value: 10, label: '第10节课' },
+        { value: 11, label: '第11节课' },
+        { value: 12, label: '第12节课' },
+      ],
+      timeDivision: [
+        // 上午
+        { start: new Time(8, 5), end: new Time(8, 50) },
+        { start: new Time(8, 55), end: new Time(9, 40) },
+        { start: new Time(10, 0), end: new Time(10, 45) },
+        { start: new Time(10, 50), end: new Time(11, 35) },
+        // 下午
+        { start: new Time(14, 20), end: new Time(15, 5) },
+        { start: new Time(15, 15), end: new Time(16, 0) },
+        // 晚上
+        { start: new Time(19, 20), end: new Time(20, 5) },
+        { start: new Time(20, 10), end: new Time(20, 55) },
+      ],
+      selectedDimen: null,//维度：教师/教室
+      searchKeyWord: '',//搜索关键字
       isModify: false,
       isOpeningPopover: false,
       popoverLeft: 0,
       popoverTop: 0,
       popoverVisible: false,
-
-      timezone: {
-        zones: [
-          {
-            timezoneName: 'Asia/Shanghai',
-          },
-        ],
-      },
+      curInfo: {},
       monthMap: {
         Jan: 1,
         Feb: 2,
@@ -87,43 +212,29 @@ export default {
         startToEndValue: [],
       },
       dialogVisible: false,
-      view: 'week', // 展示的视图类型为月视图（month | week| day）
-      week: {
-        // 月视图顶部的名称
-        dayNames: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
-        taskView: false,
-        hourStart: 7,
-        hourEnd: 22,
-        startDayOfWeek: 1,
-      },
-      // 可以设置多个类型，然后不同的事件可以展示成不同样样式
-      calendars: [{ id: 'cal1', name: 'Personal' }],
-      // 事件列表
-      events: [
-        {
-          id: '1',  //事件id 不重复
-          calendarId: 'cal1', // 对应id
-          title: 'Lunch', //事件标题
-          category: 'time', // 事件类型（milestone|task|allday|time）
-          location: 'myhouse',
-          start: '2025-03-04T20:00:00', // 事件开始时间
-          end: '2025-03-04T21:30:00' // 事件结束时间
-        }
+      visibleTimeSlots: [
+        '08:05', '08:50',
+        '08:55', '09:40',
+        '10:00', '10:45',
+        '10:50', '11:35',
+        '14:20', '15:05',
+        '15:15', '16:00',
+        '19:20', '20:05',
+        '20:10', '20:55'
       ]
     }
   },
   mounted() {
-    this.calendarInstance.setTheme({
-      week: {
-        timeGridHalfHourLine: {
-          borderBottom: '1px dotted #e5e5e5',
-        },
-      },
-    });
+    this.calendar = this.$refs.calendarRef.getApi();
   },
   computed: {
-    calendarInstance() {
-      return this.$refs.calendarRef.getInstance()
+    getPlaceholderStr() {
+      switch (this.selectedDimen) {
+        case 0: return '请输入';
+        case 1: return '请输入教师名';
+        case 2: return '请输入教室';
+        default: return '请输入';
+      }
     }
   },
   directives: {
@@ -133,7 +244,6 @@ export default {
           // 获取 popover 元素
           const popoverEl = document.querySelector('.el-popover');
           if (popoverEl && !popoverEl.contains(event.target) && !vnode.context.isOpeningPopover) {
-            // console.log('点击在 popover 外部，关闭 popover');
             binding.value(event);
           }
           // 重置标志位
@@ -147,33 +257,48 @@ export default {
     },
   },
   methods: {
-    handleClose(done) {
-      var confirmStr = `之前${this.isModify === true ? '修改' : '填写'}的数据都会丢失，你确定关闭吗？`
-      this.$confirm(confirmStr)
-        .then(_ => {
-          this.handleResetCourseInfo()
-          this.dialogVisible = false
-          if (this.isModify) {
-            this.$message(`已取消${this.isModify === true ? '修改' : '填写'}`)
-          }
-          this.isModify = false
-          done()
+    validateSelection() {
+      // 为空不做校验
+      if (!this.startClass || !this.endClass) {
+        return
+      }
+      if (this.startClass > this.endClass) {
+        this.$message({
+          type: 'error',
+          message: '开始节次不得大于结束节次'
         })
-        .catch(_ => { })
+      }
+    },
+    handleClose(done) {
+      // var confirmStr = `之前${this.isModify === true ? '修改' : '填写'}的数据都会丢失，你确定关闭吗？`
+      // this.$confirm(confirmStr)
+      //   .then(_ => {
+      //     this.handleResetCourseInfo()
+      //     this.dialogVisible = false
+      //     if (this.isModify) {
+      //       this.$message(`已取消${this.isModify === true ? '修改' : '填写'}`)
+      //     }
+      //     this.isModify = false
+      //     done()
+      //   })
+      //   .catch(_ => { })
+
+      this.handleResetCourseInfo()
+      this.dialogVisible = false
     },
     handleResetCourseInfo() {
-      this.courseInfo.name = ''
-      this.courseInfo.startToEndValue = []
+      this.courseInfo.id = ''
+      // this.courseInfo.startToEndValue = []
     },
     handleModifyFocusEvent() {
       this.isModify = true
-      this.courseInfo.name = this.selectedEvent.title
-      this.courseInfo.startToEndValue = [this.selectedEvent.start, this.selectedEvent.end]
+      this.courseInfo.id = this.curInfo.event.title
       this.dialogVisible = true
     },
     handleDeleteFocusEvent() {
       this.popoverVisible = false
-      this.calendarInstance.deleteEvent(this.selectedEvent.id, this.selectedEvent.calendarId);
+      // console.log(this.curInfo)
+      this.curInfo.event.remove()
       this.$message({
         message: '已删除',
         type: 'warning'
@@ -182,11 +307,11 @@ export default {
     closePopover() {
       this.popoverVisible = false;
     },
-    handleClickEvent(eventData) {
-      const calendarEl = this.$refs.calendarRef.$el;
-      const target = calendarEl.querySelector(`[data-event-id="${eventData.event.id}"]`);
-      // console.log(target)
+    handleClickEvent(info) {
+      this.curInfo = info
+      const target = info.jsEvent.target;
       if (target) {
+        const calendarEl = this.$refs.calendarRef.$el;
         const rect = target.getBoundingClientRect();
         const calendarRect = calendarEl.getBoundingClientRect();
         const scrollX = window.scrollX;
@@ -196,8 +321,8 @@ export default {
         this.popoverLeft = rect.right - calendarRect.left + scrollX;
         this.popoverTop = rect.top - calendarRect.top + scrollY;
       }
-      this.popoverVisible = true
-      this.selectedEvent = eventData.event
+      this.popoverVisible = true;
+      this.selectedEvent = info.event;
       // 设置标志位
       this.isOpeningPopover = true;
     },
@@ -207,22 +332,26 @@ export default {
         if (valid) {
           //验证通过，执行正常逻辑
           if (!this.isModify) {
-            this.calendarInstance.createEvents([
-              {
-                id: 'event1',
-                calendarId: 'cal1',
-                title: this.courseInfo.name,
-                start: this.selectedEvent.start,
-                end: this.selectedEvent.end
-              }
-            ])
-          } else {
-            const changes = {
-              title: this.courseInfo.name,
-              start: this.courseInfo.startToEndValue[0],
-              end: this.courseInfo.startToEndValue[1],
+            const newEvent = {
+              title: this.courseInfo.id,
+              start: this.curInfo.start,
+              end: this.curInfo.end
+            };
+            if (this.calendar.addEvent(newEvent)) {
+              this.dialogVisible = false
+              this.$message({
+                type: 'success',
+                message: '添加成功'
+              })
+            } else {
+              this.$message({
+                type: 'error',
+                message: '添加失败'
+              })
             }
-            this.calendarInstance.updateEvent(this.selectedEvent.id, this.selectedEvent.calendarId, changes);
+          } else {
+            // console.log(this.curInfo.event)
+            this.curInfo.event.setProp('title', this.courseInfo.id)
             this.handleResetCourseInfo()
             this.isModify = false
             this.$message({
@@ -230,7 +359,6 @@ export default {
               type: 'success'
             })
           }
-          this.calendarInstance.clearGridSelections()
           this.dialogVisible = false
         } else {
           //验证失败
@@ -238,21 +366,88 @@ export default {
         }
       })
     },
-    //拖拽更新
-    handleBeforeUpdateEvent(eventData) {
-      // console.log('即将更新的事件信息：', eventData);
-      this.calendarInstance.updateEvent(eventData.event.id, eventData.event.calendarId, eventData.changes);
-    },
-    onSelectDateTime(event) {
-      this.selectedEvent = event
-      this.courseInfo.startToEndValue = [event.start, event.end]
-      this.dialogVisible = true
+    handleTimeDivision(event) {
+      var start = event.start
+      var end = event.end
+      if (!start) {
+        // Todo:下拉延长日程时，start为空
+        return;
+      }
+      console.log(start.getHours(), start.getMinutes())
+      var range = {
+        start: new Time(start.getHours(), start.getMinutes()),
+        end: new Time(end.getHours(), end.getMinutes())
+      }
+      for (var i = 0; i < this.timeDivision.length; i++) {
+        if (range.start.compareTo(this.timeDivision[i].start) >= 0 && range.start.compareTo(this.timeDivision[i].end) <= 0) {
+          // console.log(range.start.subtract(this.timeDivision[i].start), this.timeDivision[i].end.subtract(range.start))
+          var j = (range.start.subtract(this.timeDivision[i].start) >= this.timeDivision[i].end.subtract(range.start)) ? (i + 1) : i
+          if (j >= this.timeDivision.length) {
+            return
+          }
+          // console.log(i, j)
+          start.setHours(this.timeDivision[j].start.hour)
+          end.setHours(this.timeDivision[j].end.hour)
+          start.setMinutes(this.timeDivision[j].start.minute)
+          end.setMinutes(this.timeDivision[j].end.minute)
+          event.setStart(start)
+          event.setEnd(end)
+          return
+        }
+      }
+
     },
     isCourseInfoEmpty() {
 
     },
     resetForm() {
       this.$refs.formRef.resetFields();
+    },
+    handleSelect(info) {
+      this.dialogVisible = true
+      this.curInfo = info
+      info.view.calendar.unselect()
+    },
+    calculateDateRange() { // 计算有效日期范围
+      const startDate = new Date(2025, 2, 3); // 3 月 1 日，月份从 0 开始计数
+      const endDate = addWeeks(startDate, 16);
+      return {
+        start: startDate,
+        end: endDate
+      };
+    },
+    getWeekNumberTitle(date = new Date()) {
+      // 重新计算基准周数
+      const weekNumber = getISOWeek(date) - getISOWeek(new Date(2025, 2, 3)) + 1;
+      this.weekNum = weekNumber
+      return `第 ${weekNumber} 周`;
+    },
+    getDynamicConfig() {
+      return {
+        slotMinTime: '08:00:00',
+        slotMaxTime: '22:00:00',
+        slotDuration: '00:05:00',
+        slotLabelInterval: '00:05:00',
+        slotLabelFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        },
+        slotLabelContent: (arg) => {
+          const currentTime = arg.date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+          return this.visibleTimeSlots.includes(currentTime) ? currentTime : '';
+        },
+      };
+    },
+    handleEventDrop(info) {
+      // info 包含了事件移动前后的信息
+      var event = info.event;
+      // 后端传过来的节数整齐则进入函数
+      this.handleTimeDivision(event)
     }
   },
   beforeDestroy() {
@@ -273,6 +468,8 @@ export default {
   z-index: 998;
   /* 适当降低遮罩层的 z-index */
 }
+
+
 
 ::v-deep .el-popover .popover-content {
   display: flex;
