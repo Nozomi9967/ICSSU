@@ -66,7 +66,7 @@
 <script>
 import { SERVER_URL, COURSE_PREFIX } from "@config"
 import axios from "axios";
-import CourseForm from "@/pages/CourseForm"
+import CourseForm from "@/components/CourseForm"
 export default {
   name: 'Course',
   components: {
