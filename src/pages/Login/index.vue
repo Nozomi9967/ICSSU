@@ -69,6 +69,8 @@ export default {
           this.$message('提交成功!登陆中---');
           // this.handleAxios()
           this.$message('登录成功')
+          // 设置身份
+          this.$store.commit('SetIdentity', 0)
           this.$store.commit('ChangeAuthState')
           this.$router.push('/home')
         } else {

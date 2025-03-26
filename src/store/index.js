@@ -11,11 +11,15 @@ const mutations = {
   },
   Recover(state) {
     state.isAuth = false
+  },
+  SetIdentity(state, iden) {
+    state.identity = iden
   }
 }
 
 const state = {
-  isAuth: false
+  isAuth: false,
+  identity: null,//0:管理员,1:教师,2:学生
 }
 
 export default new Vuex.Store({

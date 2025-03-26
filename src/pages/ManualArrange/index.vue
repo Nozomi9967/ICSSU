@@ -2,30 +2,40 @@
 
   <div style="position: relative;">
     <Calendar style="height: 700px" ref="calendarRef" :view="view" :use-detail-popup="false" :week="week"
-      :calendars="calendars" :events="events" :usage-statistics="false" :options="calendarOptions" :time-zone=timezone
-      @selectDateTime="onSelectDateTime" @beforeCreateEvent="handleBeforeCreateEvent"
-      @beforeDeleteEvent="handleBeforeDeleteEvent" @beforeUpdateEvent="handleBeforeUpdateEvent"
-      @clickEvent="handleClickEvent" :template="popupTemplate" />
+      :calendars="calendars" :events="events" :usage-statistics="false" :time-zone=timezone
+      @selectDateTime="onSelectDateTime" @beforeUpdateEvent="handleBeforeUpdateEvent" @clickEvent="handleClickEvent" />
     <!-- 新增课程dialog -->
-    <el-dialog title="提示" :visible.sync="dialogVisible" width="60%" :before-close="handleClose">
-      <el-input placeholder="请输入课程名称" v-model="courseInfo.name" clearable>
-      </el-input>
-      <el-time-picker is-range arrow-control v-model="courseInfo.startToEndValue" range-separator="至"
-        start-placeholder="开始时间" end-placeholder="结束时间" placeholder="选择时间范围">
-      </el-time-picker>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="handleBeforeCreateEvent">确 定</el-button>
-      </span>
+    <el-dialog title="提示" :close-on-click-modal="false" :visible.sync="dialogVisible" width="60%"
+      :before-close="handleClose">
+      <el-form :model="courseInfo" ref="formRef">
+        <el-form-item label="课程编号" prop="id">
+          <el-input v-model="courseInfo.id"></el-input>
+        </el-form-item>
+        <el-form-item label="课程名称" prop="name">
+          <el-input v-model="courseInfo.name"></el-input>
+        </el-form-item>
+        <el-form-item label="开始时间 - 结束时间" prop="startToEndValue">
+          <el-time-picker is-range arrow-control v-model="courseInfo.startToEndValue" range-separator="至"
+            start-placeholder="开始时间" end-placeholder="结束时间" placeholder="选择时间范围">
+          </el-time-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="handleCreateOrModifyEvent">提交</el-button>
+          <el-button @click="handleClose">取消</el-button>
+          <el-button @click="resetForm">重置</el-button>
+        </el-form-item>
+      </el-form>
     </el-dialog>
     <!-- 点击日程后的popover弹出框 -->
     <el-popover v-model="popoverVisible"
       :style="{ left: popoverLeft + 'px', top: popoverTop + 'px', position: 'absolute' }" placement="bottom"
-      trigger="manual" :title=selectedEvent.title width="200" content="rrrr">
+      trigger="manual" :title=selectedEvent.title width="200">
       <div class="popover-content">
-        <div class="popover-text">rrrr</div>
-        <el-button type="text">编辑</el-button>
-        <el-button type="text">删除</el-button>
+        <div class="popover-text">{{ selectedEvent.location }}</div>
+        <div class="button-group">
+          <el-button type="text" @click="handleModifyFocusEvent">编辑</el-button>
+          <el-button type="text" @click="handleDeleteFocusEvent">删除</el-button>
+        </div>
       </div>
     </el-popover>
     <!-- 遮罩层 -->
@@ -41,37 +51,20 @@ export default {
   components: {
     Calendar
   },
-  mounted() {
-    // console.log('组件已挂载，检查 taskTemplate', this.taskTemplate);
-    // 可以在这里添加更多的检查逻辑，比如获取日历实例中的任务元素，检查其是否符合预期
-    // 添加全局点击事件监听器
-  },
   data() {
     return {
+      isModify: false,
       isOpeningPopover: false,
       popoverLeft: 0,
       popoverTop: 0,
       popoverVisible: false,
+
       timezone: {
         zones: [
           {
             timezoneName: 'Asia/Shanghai',
           },
         ],
-      },
-      popupTemplate: {
-        popupIsAllday() {
-          return '全天';
-        },
-        titlePlaceholder() {
-          return '课程名称';
-        },
-        locationPlaceholder() {
-          return '课程地点';
-        },
-        popupSave() {
-          return '添加';
-        },
       },
       monthMap: {
         Jan: 1,
@@ -89,13 +82,9 @@ export default {
       },
       selectedEvent: {},
       courseInfo: {
+        id: '',
         name: '',
         startToEndValue: [],
-      },
-      calendarOptions: {
-        isReadOnly: true,
-        useDetailPopup: true,
-        timeZone: 'Asia/Shanghai'
       },
       dialogVisible: false,
       view: 'week', // 展示的视图类型为月视图（month | week| day）
@@ -123,6 +112,15 @@ export default {
       ]
     }
   },
+  mounted() {
+    this.calendarInstance.setTheme({
+      week: {
+        timeGridHalfHourLine: {
+          borderBottom: '1px dotted #e5e5e5',
+        },
+      },
+    });
+  },
   computed: {
     calendarInstance() {
       return this.$refs.calendarRef.getInstance()
@@ -149,6 +147,38 @@ export default {
     },
   },
   methods: {
+    handleClose(done) {
+      var confirmStr = `之前${this.isModify === true ? '修改' : '填写'}的数据都会丢失，你确定关闭吗？`
+      this.$confirm(confirmStr)
+        .then(_ => {
+          this.handleResetCourseInfo()
+          this.dialogVisible = false
+          if (this.isModify) {
+            this.$message(`已取消${this.isModify === true ? '修改' : '填写'}`)
+          }
+          this.isModify = false
+          done()
+        })
+        .catch(_ => { })
+    },
+    handleResetCourseInfo() {
+      this.courseInfo.name = ''
+      this.courseInfo.startToEndValue = []
+    },
+    handleModifyFocusEvent() {
+      this.isModify = true
+      this.courseInfo.name = this.selectedEvent.title
+      this.courseInfo.startToEndValue = [this.selectedEvent.start, this.selectedEvent.end]
+      this.dialogVisible = true
+    },
+    handleDeleteFocusEvent() {
+      this.popoverVisible = false
+      this.calendarInstance.deleteEvent(this.selectedEvent.id, this.selectedEvent.calendarId);
+      this.$message({
+        message: '已删除',
+        type: 'warning'
+      })
+    },
     closePopover() {
       this.popoverVisible = false;
     },
@@ -171,41 +201,58 @@ export default {
       // 设置标志位
       this.isOpeningPopover = true;
     },
-    handleBeforeCreateEvent() {
-      this.calendarInstance.createEvents([
-        {
-          id: 'event1',
-          calendarId: 'cal1',
-          title: this.courseInfo.name,
-          start: this.selectedEvent.start,
-          end: this.selectedEvent.end
+    //手动修改更新
+    handleCreateOrModifyEvent() {
+      this.$refs.formRef.validate((valid) => {
+        if (valid) {
+          //验证通过，执行正常逻辑
+          if (!this.isModify) {
+            this.calendarInstance.createEvents([
+              {
+                id: 'event1',
+                calendarId: 'cal1',
+                title: this.courseInfo.name,
+                start: this.selectedEvent.start,
+                end: this.selectedEvent.end
+              }
+            ])
+          } else {
+            const changes = {
+              title: this.courseInfo.name,
+              start: this.courseInfo.startToEndValue[0],
+              end: this.courseInfo.startToEndValue[1],
+            }
+            this.calendarInstance.updateEvent(this.selectedEvent.id, this.selectedEvent.calendarId, changes);
+            this.handleResetCourseInfo()
+            this.isModify = false
+            this.$message({
+              message: '修改成功',
+              type: 'success'
+            })
+          }
+          this.calendarInstance.clearGridSelections()
+          this.dialogVisible = false
+        } else {
+          //验证失败
+          return false
         }
-      ])
-      this.calendarInstance.clearGridSelections()
-      this.dialogVisible = false
+      })
     },
+    //拖拽更新
     handleBeforeUpdateEvent(eventData) {
       // console.log('即将更新的事件信息：', eventData);
       this.calendarInstance.updateEvent(eventData.event.id, eventData.event.calendarId, eventData.changes);
-      // 在这里可以添加你的自定义逻辑，比如阻止更新等
-      // 如果想阻止更新，可以返回 false
-      // return false;
-    },
-    handleBeforeDeleteEvent(event) {
-      // console.log(eventData)
-      this.calendarInstance.deleteEvent(event.id, event.calendarId);
     },
     onSelectDateTime(event) {
       this.selectedEvent = event
       this.courseInfo.startToEndValue = [event.start, event.end]
       this.dialogVisible = true
     },
-    handleClose(done) {
-      this.$confirm('确认关闭？')
-        .then(_ => {
-          done();
-        })
-        .catch(_ => { });
+    isCourseInfoEmpty() {
+
+    },
+    resetForm() {
+      this.$refs.formRef.resetFields();
     }
   },
   beforeDestroy() {
@@ -236,11 +283,10 @@ export default {
   /* 可以根据需要调整内边距 */
 }
 
-::v-deep .popover-content>el-button {
-  width: 50px;
-  display: inline-block;
-  /* 确保按钮在一行 */
-  margin-right: 10px;
+/* 新增按钮组样式 */
+::v-deep .el-popover .button-group {
+  display: flex;
+  gap: 10px;
   /* 按钮之间的间距 */
 }
 

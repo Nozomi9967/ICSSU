@@ -84,11 +84,11 @@ export default {
     },
     fetchTeachers() {
       // 从后端获取老师信息
-      axios.get('/api/teachers') // 替换为你的后端 API 地址
+      axios.get('http://127.0.0.1:4523/m1/5962874-5651024-default/teacher/queryall') // 替换为你的后端 API 地址
         .then(response => {
-          this.options = response.data.map(teacher => ({
-            value: teacher.id,
-            label: teacher.name
+          this.options = response.data.data.map(teacher => ({
+            value: teacher.ID,
+            label: teacher.Name
           }));
         })
         .catch(error => {
