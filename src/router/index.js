@@ -8,6 +8,9 @@ import Input from "@/pages/Input"
 import Flow from "@/pages/Flow"
 import Login from "@/pages/Login"
 import Home from "@/pages/Home"
+import Usage from "@/pages/Analysis/Usage"
+import Quantity from "@/pages/Analysis/Quantity"
+import Teacher from "@/pages/Teacher"
 import Classroom from "@/pages/Classroom"
 
 Vue.use(VueRouter)
@@ -60,6 +63,18 @@ export default new VueRouter({
     {
       path: '*',
       redirect: '/login'
+    },
+    {
+      path: '/analysis/usage',
+      component: Usage
+    },
+    {
+      path: '/analysis/quantity',
+      component: Quantity
+    },
+    {
+      path: '/teacher',
+      component: Teacher
     }
   ]
 })
