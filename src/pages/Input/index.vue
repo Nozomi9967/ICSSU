@@ -239,6 +239,7 @@ export default {
               message: "文件上传成功",
             });
             // 清空已上传的文件列表
+            console.log(this.$refs.classroomFormRef);
             this.$refs.classroomFormRef.clearFiles();
           } else {
             this.$message.error("文件上传失败");

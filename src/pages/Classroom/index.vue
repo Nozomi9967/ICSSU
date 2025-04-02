@@ -1,70 +1,78 @@
 <template>
   <div>
-    <el-table :data="tableData" border style="width: 90%; height: 820px">
-      <el-table-column fixed prop="id" label="教室编号" width="150">
-      </el-table-column>
-      <el-table-column prop="name" label="教室名称" width="120">
-      </el-table-column>
-      <el-table-column prop="campus" label="校区" width="100">
-      </el-table-column>
-      <el-table-column prop="building" label="教学楼" width="100">
-      </el-table-column>
-      <el-table-column prop="floor" label="楼层" width="80"> </el-table-column>
-      <el-table-column prop="capacity" label="容量" width="80">
-      </el-table-column>
-      <el-table-column prop="type" label="类型" width="100"> </el-table-column>
-      <el-table-column prop="has_ac" label="是否有空调" width="80">
-        <template slot-scope="scope">
-          <span>{{ scope.row.has_ac ? "是" : "否" }}</span>
+    <!-- 新增 -->
+    <div></div>
+    <!-- 管理 -->
+    <div>
+      <el-table :data="tableData" border style="width: 90%; height: 820px">
+        <el-table-column fixed prop="id" label="教室编号" width="150">
+        </el-table-column>
+        <el-table-column prop="name" label="教室名称" width="120">
+        </el-table-column>
+        <el-table-column prop="campus" label="校区" width="100">
+        </el-table-column>
+        <el-table-column prop="building" label="教学楼" width="100">
+        </el-table-column>
+        <el-table-column prop="floor" label="楼层" width="80">
+        </el-table-column>
+        <el-table-column prop="capacity" label="容量" width="80">
+        </el-table-column>
+        <el-table-column prop="type" label="类型" width="100">
+        </el-table-column>
+        <el-table-column prop="has_ac" label="是否有空调" width="80">
+          <template slot-scope="scope">
+            <span>{{ scope.row.has_ac ? "是" : "否" }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="description" label="描述" width="120">
+        </el-table-column>
+        <el-table-column prop="department" label="所属院系" width="120">
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="80">
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template slot-scope="scope">
+            <el-button
+              @click="handleDeleteClassroom(scope.row)"
+              type="text"
+              size="small"
+              >删除</el-button
+            >
+            <el-button
+              @click="handleModifyClassroom(scope.row)"
+              type="text"
+              size="small"
+              >编辑</el-button
+            >
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-dialog
+        width="70%"
+        title="教室详细"
+        :visible.sync="dialogVisible"
+        :close-on-click-modal="false"
+        :before-close="handleClose"
+      >
+        <template v-if="dialogVisible">
+          <ClassroomForm
+            :classroomInfo="classroomInfo"
+            @submit="handleSubmit"
+            @change="handleFormChange"
+          ></ClassroomForm>
         </template>
-      </el-table-column>
-      <el-table-column prop="description" label="描述" width="120">
-      </el-table-column>
-      <el-table-column prop="department" label="所属院系" width="120">
-      </el-table-column>
-      <el-table-column prop="status" label="状态" width="80"> </el-table-column>
-      <el-table-column fixed="right" label="操作" width="100">
-        <template slot-scope="scope">
-          <el-button
-            @click="handleDeleteClassroom(scope.row)"
-            type="text"
-            size="small"
-            >删除</el-button
-          >
-          <el-button
-            @click="handleModifyClassroom(scope.row)"
-            type="text"
-            size="small"
-            >编辑</el-button
-          >
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-dialog
-      width="70%"
-      title="教室详细"
-      :visible.sync="dialogVisible"
-      :close-on-click-modal="false"
-      :before-close="handleClose"
-    >
-      <template v-if="dialogVisible">
-        <ClassroomForm
-          :classroomInfo="classroomInfo"
-          @submit="handleSubmit"
-          @change="handleFormChange"
-        ></ClassroomForm>
-      </template>
-    </el-dialog>
-    <!-- 分页 -->
-    <el-pagination
-      background
-      layout="prev, pager, next"
-      :total="Pagi.total"
-      :page-size="Pagi.pageSize"
-      :current-page="Pagi.current"
-      @current-change="handleGetClassrooms"
-    >
-    </el-pagination>
+      </el-dialog>
+      <!-- 分页 -->
+      <el-pagination
+        background
+        layout="prev, pager, next"
+        :total="Pagi.total"
+        :page-size="Pagi.pageSize"
+        :current-page="Pagi.current"
+        @current-change="handleGetClassrooms"
+      >
+      </el-pagination>
+    </div>
   </div>
 </template>
 

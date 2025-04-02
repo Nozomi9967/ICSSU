@@ -83,6 +83,22 @@
               </template>
             </el-autocomplete>
           </el-form-item>
+          <el-form-item label="授课地点" prop="classroom">
+            <el-autocomplete
+              style="width: 600px"
+              v-model="courseInfo.classroom"
+              :fetch-suggestions="queryClassroomSearchAsync"
+              placeholder="请输入授课地点"
+              @select="handleClassroomSelect"
+            >
+              <template slot-scope="{ item }">
+                <div class="autocomplete-item">
+                  <el-tag>{{ item.id }}</el-tag>
+                  <span class="name">{{ item.name }}</span>
+                </div>
+              </template>
+            </el-autocomplete>
+          </el-form-item>
 
           <!-- 节次区域 -->
           <!-- <div style="display: flex;flex-wrap: wrap;gap:30px"> -->
@@ -144,7 +160,12 @@
   </div>
 </template>
 <script>
-import { SERVER_URL, COURSE_PREFIX, TEACHER_PREFIX } from "@config";
+import {
+  SERVER_URL,
+  COURSE_PREFIX,
+  TEACHER_PREFIX,
+  CLASSROOM_PREFIX,
+} from "@config";
 import axios from "axios";
 import FullCalendar from "@fullcalendar/vue";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -195,6 +216,7 @@ export default {
       serverUrl: SERVER_URL,
       coursePrefix: COURSE_PREFIX,
       teacherPrefix: TEACHER_PREFIX,
+      classroomPrefix: CLASSROOM_PREFIX,
       calendarOptions: {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: "timeGridWeek", // 开始时的视图为周视图
@@ -364,6 +386,9 @@ export default {
     },
     getTeacherSearchUrl() {
       return `${this.serverUrl}${this.teacherPrefix}/search`;
+    },
+    getClassroomSearchUrl() {
+      return `${this.serverUrl}${this.classroomPrefix}/search`;
     },
   },
   directives: {
@@ -635,10 +660,10 @@ export default {
           params: queryParms,
         })
         .then((res) => {
-          names = res.data.data.courses;
-          var results = queryString
-            ? names.filter(this.createStateFilter(queryString))
-            : names;
+          names = res.data.data.teachers;
+          var results = queryString ? names.filter((n) => n.id) : names;
+
+          console.log(results);
           clearTimeout(this.timeout);
           this.timeout = setTimeout(() => {
             cb(results);
@@ -649,6 +674,33 @@ export default {
         });
     },
     handleTeacherSelect(item) {
+      console.log(item);
+    },
+    queryClassroomSearchAsync(queryString, cb) {
+      // 请求数据
+      const queryParms = {
+        search_str: queryString,
+      };
+      var names;
+      axios
+        .get(this.getClassroomSearchUrl, {
+          params: queryParms,
+        })
+        .then((res) => {
+          names = res.data.data.classrooms;
+          var results = queryString ? names.filter((n) => n.id) : names;
+
+          console.log(results);
+          clearTimeout(this.timeout);
+          this.timeout = setTimeout(() => {
+            cb(results);
+          }, 3000 * Math.random());
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    },
+    handleClassroomSelect(item) {
       console.log(item);
     },
   },
