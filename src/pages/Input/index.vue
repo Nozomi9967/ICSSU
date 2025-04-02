@@ -95,7 +95,7 @@ export default {
       return `${this.serverUrl}${this.coursePrefix}/create/file`;
     },
     getClassroomFileUploadUrl() {
-      return "";
+      return `${this.serverUrl}${this.classroomPrefix}/create/file`;
     },
     getClassroomInsertUrl() {
       return `${this.serverUrl}${this.classroomPrefix}/create`;
@@ -118,7 +118,7 @@ export default {
     },
     //课程
     handleCourseUpload() {
-      const uploadFiles = this.$refs.uploadRef.uploadFiles;
+      const uploadFiles = this.$refs.courseUploadRef.uploadFiles;
       if (uploadFiles.length === 0) {
         this.$message.error("请选择要上传的文件");
         return;
@@ -147,14 +147,16 @@ export default {
               message: "文件上传成功",
             });
             // 清空已上传的文件列表
-            this.$refs.uploadRef.clearFiles();
+            this.$refs.courseUploadRef.clearFiles();
           } else {
             this.$message.error("文件上传失败");
+            loading.close();
           }
         })
         .catch((error) => {
           console.error("上传出错:", error);
           this.$message.error("上传过程中出现错误");
+          loading.close();
         });
     },
     handleCourseReset() {
@@ -207,7 +209,48 @@ export default {
     handleClassroomReset() {
       this.$refs.classroomFormRef.handleReset();
     },
-    handleClassroomUpload() {},
+    handleClassroomUpload() {
+      const uploadFiles = this.$refs.classroomUploadRef.uploadFiles;
+      if (uploadFiles.length === 0) {
+        this.$message.error("请选择要上传的文件");
+        return;
+      }
+      const loading = this.$loading({
+        lock: true,
+        text: "文件正在上传中，请耐心等待",
+        spinner: "el-icon-loading",
+        background: "rgba(0,0,0,0.7)",
+      });
+      const formData = new FormData();
+      uploadFiles.forEach((file) => {
+        formData.append("classroom_file", file.raw);
+      });
+      axios
+        .post(this.getClassroomFileUploadUrl, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((response) => {
+          if (response.data.status === 200) {
+            loading.close();
+            this.$message({
+              type: "success",
+              message: "文件上传成功",
+            });
+            // 清空已上传的文件列表
+            this.$refs.classroomFormRef.clearFiles();
+          } else {
+            this.$message.error("文件上传失败");
+            loading.close();
+          }
+        })
+        .catch((error) => {
+          console.error("上传出错:", error);
+          this.$message.error("上传过程中出现错误");
+          loading.close();
+        });
+    },
   },
 };
 </script>
