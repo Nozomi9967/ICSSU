@@ -1,21 +1,57 @@
 <template>
   <div>
+    <el-menu
+      :default-active="activeIndex"
+      class="el-menu-demo"
+      mode="horizontal"
+      @select="handleMenuSelect"
+    >
+      <el-menu-item index="1">管理</el-menu-item>
+      <el-menu-item index="2">新增</el-menu-item>
+    </el-menu>
     <!-- 新增 -->
-    <div></div>
+    <div style="padding: 8px" v-if="activeIndex == '2'">
+      <ClassroomForm
+        :classroomInfo="classroomInfo"
+        ref="classroomFormRef"
+        @submit="handleSubmitClassroomInput"
+      ></ClassroomForm>
+      <!-- excel输入 -->
+      <div class="excel-upload-section">
+        <el-upload
+          class="upload-demo"
+          :auto-upload="false"
+          drag
+          :action="getClassroomFileUploadUrl"
+          :before-upload="handleBeforeUpload"
+          ref="classroomUploadRef"
+          multiple
+        >
+          <i class="el-icon-upload"></i>
+          <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+          <div class="el-upload__tip" slot="tip">
+            只能上传.xlsx/.xls文件，且不超过500kb
+          </div>
+        </el-upload>
+        <el-button type="primary" @click="handleClassroomUpload"
+          >上传<i class="el-icon-upload el-icon--right"></i
+        ></el-button>
+      </div>
+    </div>
     <!-- 管理 -->
-    <div>
-      <el-table :data="tableData" border style="width: 90%; height: 820px">
-        <el-table-column fixed prop="id" label="教室编号" width="150">
+    <div style="padding: 5px" v-if="activeIndex == '1'">
+      <el-table :data="tableData" border style="width: 90%">
+        <el-table-column fixed prop="id" label="教室编号" width="180">
         </el-table-column>
-        <el-table-column prop="name" label="教室名称" width="120">
+        <el-table-column prop="name" label="教室名称" width="160">
         </el-table-column>
         <el-table-column prop="campus" label="校区" width="100">
         </el-table-column>
-        <el-table-column prop="building" label="教学楼" width="100">
+        <el-table-column prop="building" label="教学楼" width="140">
         </el-table-column>
-        <el-table-column prop="floor" label="楼层" width="80">
+        <el-table-column prop="floor" label="楼层" width="60">
         </el-table-column>
-        <el-table-column prop="capacity" label="容量" width="80">
+        <el-table-column prop="capacity" label="容量" width="60">
         </el-table-column>
         <el-table-column prop="type" label="类型" width="100">
         </el-table-column>
@@ -26,24 +62,26 @@
         </el-table-column>
         <el-table-column prop="description" label="描述" width="120">
         </el-table-column>
-        <el-table-column prop="department" label="所属院系" width="120">
+        <el-table-column prop="department" label="所属院系" width="140">
         </el-table-column>
         <el-table-column prop="status" label="状态" width="80">
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template slot-scope="scope">
-            <el-button
-              @click="handleDeleteClassroom(scope.row)"
-              type="text"
-              size="small"
-              >删除</el-button
-            >
-            <el-button
-              @click="handleModifyClassroom(scope.row)"
-              type="text"
-              size="small"
-              >编辑</el-button
-            >
+            <div class="buttons">
+              <el-button
+                @click="handleDeleteClassroom(scope.row)"
+                type="text"
+                size="small"
+                >删除</el-button
+              >
+              <el-button
+                @click="handleModifyClassroom(scope.row)"
+                type="text"
+                size="small"
+                >编辑</el-button
+              >
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -89,7 +127,107 @@ export default {
     this.handleGetClassrooms();
   },
   watch: {},
+  data() {
+    return {
+      activeIndex: "1",
+      tableData: [],
+      serverUrl: SERVER_URL,
+      classroomPrefix: CLASSROOM_PREFIX,
+      dialogVisible: false,
+      isChange: false,
+      classroomInfo: {},
+      Pagi: {
+        pageSize: 8,
+        total: 100,
+        current: 1,
+      },
+    };
+  },
+  computed: {
+    getClassroomFileUploadUrl() {
+      return `${this.serverUrl}${this.classroomPrefix}/create/file`;
+    },
+    getClassroomInsertUrl() {
+      return `${this.serverUrl}${this.classroomPrefix}/create`;
+    },
+  },
   methods: {
+    handleBeforeUpload(file) {
+      // 检查文件类型和大小
+      const isXlsx = [".xlsx", ".xls"].some((ext) => file.name.endsWith(ext));
+      const isLt500kb = file.size / 1024 < 500;
+      if (!isXlsx) {
+        this.$message.error("只能上传.xlsx/.xls文件");
+        return false;
+      }
+      if (!isLt500kb) {
+        this.$message.error("文件大小不能超过500kb");
+        return false;
+      }
+      return true;
+    },
+    handleClassroomUpload() {
+      const uploadFiles = this.$refs.classroomUploadRef.uploadFiles;
+      if (uploadFiles.length === 0) {
+        this.$message.error("请选择要上传的文件");
+        return;
+      }
+      const loading = this.$loading({
+        lock: true,
+        text: "文件正在上传中，请耐心等待",
+        spinner: "el-icon-loading",
+        background: "rgba(0,0,0,0.7)",
+      });
+      const formData = new FormData();
+      uploadFiles.forEach((file) => {
+        formData.append("classroom_file", file.raw);
+      });
+      axios
+        .post(this.getClassroomFileUploadUrl, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((response) => {
+          if (response.data.status === 200) {
+            loading.close();
+            this.$message({
+              type: "success",
+              message: "文件上传成功",
+            });
+            // 清空已上传的文件列表
+            this.$refs.classroomUploadRef.clearFiles();
+          } else {
+            this.$message.error("文件上传失败");
+            loading.close();
+          }
+        })
+        .catch((error) => {
+          console.error("上传出错:", error);
+          this.$message.error("上传过程中出现错误");
+          loading.close();
+        });
+    },
+    handleSubmitClassroomInput(info) {
+      console.log(info);
+      axios
+        .post(this.getClassroomInsertUrl, info)
+        .then((res) => {
+          if (res.data.status == 200) {
+            this.$message.success("新增成功");
+            this.handleClassroomReset();
+          } else {
+            this.$message.error("新增失败!");
+          }
+        })
+        .catch((error) => {
+          const errMsg = error.response.data.message;
+          this.$message.error(`新增失败！${errMsg}`);
+        });
+    },
+    handleClassroomReset() {
+      this.$refs.classroomFormRef.handleReset();
+    },
     handleFormChange(isChange) {
       this.isChange = isChange;
     },
@@ -209,41 +347,9 @@ export default {
           });
         });
     },
-  },
-  data() {
-    return {
-      tableData: [],
-      serverUrl: SERVER_URL,
-      classroomPrefix: CLASSROOM_PREFIX,
-      dialogVisible: false,
-      isChange: false,
-      classroomInfo: {},
-      rules: {
-        id: [
-          { required: true, message: "请输入教室编号", trigger: "blur" },
-          {
-            min: 2,
-            max: 20,
-            message: "教室编号长度应在 2 到 20 个字符之间",
-            trigger: "blur",
-          },
-        ],
-        name: [
-          { required: true, message: "请输入教室名称", trigger: "blur" },
-          {
-            min: 2,
-            max: 20,
-            message: "教室名称长度应在 2 到 20 个字符之间",
-            trigger: "blur",
-          },
-        ],
-      },
-      Pagi: {
-        pageSize: 10,
-        total: 100,
-        current: 1,
-      },
-    };
+    handleMenuSelect(_, keyPath) {
+      this.activeIndex = keyPath[0];
+    },
   },
 };
 </script>
@@ -251,5 +357,23 @@ export default {
 <style scoped>
 .el-dialog .classroom-form .id {
   width: 100px !important;
+}
+.excel-upload-section {
+  margin-top: 60px;
+  text-align: center;
+}
+
+.el-button {
+  margin: 10px;
+}
+
+::v-deep .el-table .el-table__row {
+  height: 40px !important;
+}
+
+.buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
