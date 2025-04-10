@@ -1,176 +1,176 @@
 <template>
-  <el-form :model="localCourseInfo" :rules="rules" ref="formRef">
-    <div class="base-info-section">
-      <el-form-item
-        label="课程编号"
-        class="course_id"
-        prop="course_id"
-        style="max-width: 467px"
-      >
-        <el-input
-          v-model="localCourseInfo.course_id"
-          style="width: 180px"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="课程名称" prop="course_name">
-        <el-input
-          v-model="localCourseInfo.course_name"
-          style="width: 280px"
-        ></el-input>
-      </el-form-item>
-    </div>
-    <!-- <el-form-item label="课程类别" prop="category">
-      <el-select v-model="localCourseInfo.category" placeholder="请选择">
+  <div class="content">
+    <el-form :model="courseInfo" :rules="rules" ref="formRef">
+      <div class="top">
+        <span class="top-title">基本信息</span>
+        <div class="base-info-section">
+          <el-form-item label="课程编号" class="course_id" prop="course_id">
+            <el-input
+              v-model="courseInfo.course_id"
+              style="width: 223px"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="课程名称" prop="course_name">
+            <el-input
+              v-model="courseInfo.course_name"
+              style="width: 223px"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="是否纯实践环节" prop="pure_practice">
+            <el-switch
+              v-model="courseInfo.pure_practice"
+              active-text="是"
+              inactive-text="否"
+            >
+            </el-switch>
+          </el-form-item>
+        </div>
+        <!-- <el-form-item label="课程类别" prop="category">
+      <el-select v-model="courseInfo.category" placeholder="请选择">
         <el-option v-for="item in categoryOptions" :key="item.value" :label="item.label" :value="item.value">
         </el-option>
       </el-select>
     </el-form-item> -->
-    <div class="select-section">
-      <el-form-item label="课程属性" prop="course_property">
-        <el-select
-          v-model="localCourseInfo.course_property"
-          placeholder="请选择"
-        >
-          <el-option
-            v-for="item in attributeOptions"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="课程类型" prop="course_type">
-        <el-select v-model="localCourseInfo.course_type" placeholder="请选择">
-          <el-option
-            v-for="item in typeOptions"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="开课院系" prop="course_department">
-        <el-select
-          v-model="localCourseInfo.course_department"
-          placeholder="请选择"
-        >
-          <el-option
-            v-for="item in departmentOptions"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-    </div>
-    <!-- <el-form-item label="课程性质" prop="property">
-      <el-select v-model="localCourseInfo.property" placeholder="请选择">
+        <div class="select-section">
+          <el-form-item label="课程属性" prop="course_property">
+            <el-select
+              v-model="courseInfo.course_property"
+              placeholder="请选择"
+            >
+              <el-option
+                v-for="item in attributeOptions"
+                :key="item.label"
+                :label="item.label"
+                :value="item.label"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="课程类型" prop="course_type">
+            <el-select v-model="courseInfo.course_type" placeholder="请选择">
+              <el-option
+                v-for="item in typeOptions"
+                :key="item.label"
+                :label="item.label"
+                :value="item.label"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="开课院系" prop="course_department">
+            <el-select
+              v-model="courseInfo.course_department"
+              placeholder="请选择"
+            >
+              <el-option
+                v-for="item in departmentOptions"
+                :key="item.label"
+                :label="item.label"
+                :value="item.label"
+              >
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </div>
+      </div>
+      <!-- <el-form-item label="课程性质" prop="property">
+      <el-select v-model="courseInfo.property" placeholder="请选择">
         <el-option v-for="item in propertyOptions" :key="item.value" :label="item.label" :value="item.value">
         </el-option>
       </el-select>
     </el-form-item> -->
-    <!-- <el-form-item label="课程英文名" prop="ename">
-      <el-input v-model="localCourseInfo.ename"></el-input>
+      <!-- <el-form-item label="课程英文名" prop="ename">
+      <el-input v-model="courseInfo.ename"></el-input>
     </el-form-item> -->
-    <el-form-item label="是否纯实践环节" prop="pure_practice">
-      <el-switch
-        v-model="localCourseInfo.pure_practice"
-        active-text="是"
-        inactive-text="否"
-      >
-      </el-switch>
-    </el-form-item>
-    <div class="study-hours-section1">
-      <el-form-item label="总学时" label-width="80px" prop="total_hours">
-        <el-input-number
-          v-model="localCourseInfo.total_hours"
-          :min="0"
-          :max="480"
-          label="总学时"
-        ></el-input-number>
+
+      <div class="middle">
+        <span class="middle-title">其它信息</span>
+        <div class="study-hours-section1">
+          <el-form-item label="总学时" label-width="80px" prop="total_hours">
+            <el-input-number
+              v-model="courseInfo.total_hours"
+              :min="0"
+              :max="480"
+              label="总学时"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="理论学时" prop="theory_hours">
+            <el-input-number
+              v-model="courseInfo.theory_hours"
+              :min="0"
+              :max="480"
+              label="理论学时"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="实验学时" prop="test_hours">
+            <el-input-number
+              v-model="courseInfo.test_hours"
+              :min="0"
+              :max="480"
+              label="实验学时"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="上机学时" prop="computer_hours">
+            <el-input-number
+              v-model="courseInfo.computer_hours"
+              :min="0"
+              :max="480"
+              label="上机学时"
+            ></el-input-number>
+          </el-form-item>
+        </div>
+        <div class="study-hours-section2">
+          <el-form-item label="实践学时" prop="practice_hours">
+            <el-input-number
+              v-model="courseInfo.practice_hours"
+              :min="0"
+              :max="480"
+              label="实践学时"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="其他学时" prop="other_hours">
+            <el-input-number
+              v-model="courseInfo.other_hours"
+              :min="0"
+              :max="480"
+              label="其他学时"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="学分" label-width="80px" prop="course_credit">
+            <el-input-number
+              v-model="courseInfo.course_credit"
+              :min="0.25"
+              :max="30"
+              :precision="2"
+              :step="0.1"
+              label="学分"
+            ></el-input-number>
+          </el-form-item>
+          <el-form-item label="周学时" label-width="80px" prop="weekly_hours">
+            <el-input-number
+              v-model="courseInfo.weekly_hours"
+              :min="0"
+              :max="30"
+              label="周学时"
+            ></el-input-number>
+          </el-form-item>
+        </div>
+      </div>
+      <el-form-item>
+        <el-button plain type="primary" @click="handleSubmit">提交</el-button>
+        <!-- <el-button @click="handleClose">取消</el-button> -->
+        <el-button plain @click="handleReset">重置</el-button>
       </el-form-item>
-      <el-form-item label="理论学时" prop="theory_hours">
-        <el-input-number
-          v-model="localCourseInfo.theory_hours"
-          :min="0"
-          :max="480"
-          label="理论学时"
-        ></el-input-number>
-      </el-form-item>
-      <el-form-item label="实验学时" prop="test_hours">
-        <el-input-number
-          v-model="localCourseInfo.test_hours"
-          :min="0"
-          :max="480"
-          label="实验学时"
-        ></el-input-number>
-      </el-form-item>
-      <el-form-item label="上机学时" prop="computer_hours">
-        <el-input-number
-          v-model="localCourseInfo.computer_hours"
-          :min="0"
-          :max="480"
-          label="上机学时"
-        ></el-input-number>
-      </el-form-item>
-    </div>
-    <div class="study-hours-section2">
-      <el-form-item label="实践学时" prop="practice_hours">
-        <el-input-number
-          v-model="localCourseInfo.practice_hours"
-          :min="0"
-          :max="480"
-          label="实践学时"
-        ></el-input-number>
-      </el-form-item>
-      <el-form-item label="其他学时" prop="other_hours">
-        <el-input-number
-          v-model="localCourseInfo.other_hours"
-          :min="0"
-          :max="480"
-          label="其他学时"
-        ></el-input-number>
-      </el-form-item>
-      <el-form-item label="学分" label-width="80px" prop="course_credit">
-        <el-input-number
-          v-model="localCourseInfo.course_credit"
-          :min="0.25"
-          :max="30"
-          :precision="2"
-          :step="0.1"
-          label="学分"
-        ></el-input-number>
-      </el-form-item>
-      <el-form-item label="周学时" label-width="80px" prop="weekly_hours">
-        <el-input-number
-          v-model="localCourseInfo.weekly_hours"
-          :min="0"
-          :max="30"
-          label="周学时"
-        ></el-input-number>
-      </el-form-item>
-    </div>
-    <el-form-item>
-      <el-button plain type="primary" @click="handleSubmit">提交</el-button>
-      <!-- <el-button @click="handleClose">取消</el-button> -->
-      <el-button plain @click="handleReset">重置</el-button>
-    </el-form-item>
-  </el-form>
+    </el-form>
+  </div>
 </template>
 
 <script>
 export default {
   name: "CourseForm",
   props: {
-    dialogVisible: {
-      type: Boolean,
-      default: false,
-    },
     // 接收父组件传递的课程信息
-    courseInfo: {
+    CourseInfo: {
       type: Object,
       default: () => ({
         course_id: "570101KB0A08-2",
@@ -192,8 +192,7 @@ export default {
   },
   data() {
     return {
-      isInitializing: true,
-      localCourseInfo: this.courseInfo, // 使用 data 属性存储课程信息
+      courseInfo: this.CourseInfo, // 使用 data 属性存储课程信息
       localIsChange: this.isChange, // 使用 data 属性存储是否改变的状态
       categoryOptions: [
         {
@@ -419,32 +418,22 @@ export default {
       },
     };
   },
-  watch: {
-    localCourseInfo: {
-      handler(_) {
-        if (!this.isInitializing) {
-          this.localIsChange = true;
-          this.$emit("change", this.localIsChange);
-        }
-        this.isInitializing = false; // 初始化完成后将标志位设为 false
-      },
-      deep: true,
-    },
-  },
   methods: {
     handleSubmit() {
       this.$refs.formRef.validate((valid) => {
         if (valid) {
           // 通知父组件提交表单
-          this.$emit("submit", this.localCourseInfo);
+          this.$emit("submit", this.courseInfo);
         } else {
           console.log("表单验证失败");
         }
       });
     },
     handleReset() {
-      // this.localCourseInfo = { ...this.courseInfo }; // 重置为初始的 courseInfo
       this.courseInfo = {};
+    },
+    handleCourseInfoChange(newVal) {
+      this.courseInfo = newVal;
     },
   },
   mounted() {
@@ -456,14 +445,43 @@ export default {
 };
 </script>
 
-<style  scoped>
+<style scoped>
 .base-info-section,
 .select-section,
 .study-hours-section1,
 .study-hours-section2 {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center; /* 修改为垂直居中对齐 */
+  justify-content: center; /* 水平方向也居中对齐 */
+}
+
+.top,
+.middle {
+  margin-bottom: 30px;
+  border: 2px solid rgba(128, 128, 128, 0.489);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+  margin-bottom: 20px; /* 添加底部边距，使两个框之间有间隔 */
+}
+
+.top:hover,
+.middle:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.top-title,
+.middle-title {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background-color: white;
+  padding: 0 5px;
+  z-index: 1;
+  font-weight: bold;
 }
 
 .base-info-section .el-form-item,
@@ -471,5 +489,7 @@ export default {
 .study-hours-section1 .el-form-item,
 .study-hours-section2 .el-form-item {
   flex: 1;
+  min-width: 223px; /* 设置最小宽度，防止元素过窄 */
+  margin: 10px; /* 添加外边距，使元素之间有间隔 */
 }
 </style>

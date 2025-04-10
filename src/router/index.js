@@ -4,7 +4,6 @@ import ManualArrange from "@/pages/ManualArrange"
 import AutoArrange from "@/pages/AutoArrange"
 import Schedule from "@/pages/Schedule"
 import Course from "@/pages/Course"
-import Input from "@/pages/Input"
 import Flow from "@/pages/Flow"
 import Login from "@/pages/Login"
 import Home from "@/pages/Home"
@@ -43,10 +42,6 @@ export default new VueRouter({
     {
       path: '/schedule',
       component: Schedule
-    },
-    {
-      path: '/input',
-      component: Input
     },
     {
       path: '/flow',

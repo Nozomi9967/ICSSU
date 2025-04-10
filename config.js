@@ -6,3 +6,4 @@ export const TEACHER_PREFIX = '/teacher'
 export const IDENTITY_ADMIN = '0'
 export const IDENTITY_TEACHER = '1'
 export const IDENTITY_STUDENT = '2'
+export const TAGS_NUM = 15

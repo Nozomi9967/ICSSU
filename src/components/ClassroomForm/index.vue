@@ -1,129 +1,123 @@
 <template>
-  <el-form :model="classroomInfo" :rules="rules" ref="formRef">
-    <div class="base-info-section">
-      <el-form-item
-        label="教室编号"
-        class="id"
-        prop="id"
-        style="max-width: 467px"
-      >
-        <el-input v-model="classroomInfo.id" style="width: 180px"></el-input>
-      </el-form-item>
-      <el-form-item label="教室名称" prop="name">
-        <el-input v-model="classroomInfo.name" style="width: 280px"></el-input>
-      </el-form-item>
-    </div>
-    <div class="select-section">
-      <el-form-item label="所属校区" prop="campus">
-        <el-select v-model="classroomInfo.campus" placeholder="请选择">
-          <el-option
-            v-for="item in campusOptions"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="教学楼" prop="building" label-width="80px">
-        <el-select v-model="classroomInfo.building" placeholder="请选择">
-          <el-option
-            v-for="item in buildingOptions"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="开课院系" prop="department">
-        <el-select v-model="classroomInfo.department" placeholder="请选择">
-          <el-option
-            v-for="item in departmentOptions"
-            :key="item.label"
-            :label="item.label"
-            :value="item.label"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="管理部门" prop="department">
-        <el-select v-model="classroomInfo.department" placeholder="请选择">
-          <el-option
-            v-for="item in departmentOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="教室类型" prop="type">
-        <el-select v-model="classroomInfo.type" placeholder="请选择">
-          <el-option
-            v-for="item in typeOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="所在楼层" prop="floor">
-        <el-select v-model="classroomInfo.floor" placeholder="请选择">
-          <el-option
-            v-for="item in floorOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          >
-          </el-option>
-        </el-select>
-      </el-form-item>
-    </div>
+  <div class="content">
+    <el-form :model="classroomInfo" :rules="rules" ref="formRef">
+      <div class="vital-info-section">
+        <span class="vital-title">关键信息</span>
+        <el-form-item
+          label="教室编号"
+          class="id"
+          prop="id"
+          style="max-width: 467px"
+        >
+          <el-input v-model="classroomInfo.id" style="width: 223px"></el-input>
+        </el-form-item>
+        <el-form-item label="教室名称" prop="name">
+          <el-input
+            v-model="classroomInfo.name"
+            style="width: 223px"
+          ></el-input>
+        </el-form-item>
+      </div>
+      <div class="select-section">
+        <span class="base-title">基本信息</span>
+        <el-form-item label="所属校区" prop="campus">
+          <el-select v-model="classroomInfo.campus" placeholder="请选择">
+            <el-option
+              v-for="item in campusOptions"
+              :key="item.label"
+              :label="item.label"
+              :value="item.label"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="教学楼" prop="building" label-width="80px">
+          <el-select v-model="classroomInfo.building" placeholder="请选择">
+            <el-option
+              v-for="item in buildingOptions"
+              :key="item.label"
+              :label="item.label"
+              :value="item.label"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="考场容纳" label-width="80px" prop="capacity">
+          <el-input-number
+            v-model="classroomInfo.capacity"
+            :min="0"
+            :step="10"
+            :max="100"
+            label="考场容纳"
+          ></el-input-number>
+        </el-form-item>
+        <el-form-item label="管理部门" prop="department" label-width="80px">
+          <el-select v-model="classroomInfo.department" placeholder="请选择">
+            <el-option
+              v-for="item in departmentOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.label"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="教室类型" prop="type">
+          <el-select v-model="classroomInfo.type" placeholder="请选择">
+            <el-option
+              v-for="item in typeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.label"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="所在楼层" prop="floor">
+          <el-select v-model="classroomInfo.floor" placeholder="请选择">
+            <el-option
+              v-for="item in floorOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.label"
+            >
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </div>
 
-    <el-form-item label="考场容纳" label-width="80px" prop="capacity">
-      <el-input-number
-        v-model="classroomInfo.capacity"
-        :min="0"
-        :step="10"
-        :max="100"
-        label="考场容纳"
-      ></el-input-number>
-    </el-form-item>
-    <el-form-item label="是否有空调" prop="has_ac">
-      <el-switch
-        v-model="classroomInfo.has_ac"
-        active-text="是"
-        inactive-text="否"
-      >
-      </el-switch>
-    </el-form-item>
-    <!-- <el-form-item label="是否启用" prop="status">
-      <el-switch
-        v-model="classroomInfo.status"
-        active-text="是"
-        inactive-text="否"
-      >
-      </el-switch>
-    </el-form-item> -->
+      <div class="other-info-section">
+        <span class="other-title">其它信息</span>
+        <el-form-item label="是否有空调" prop="has_ac">
+          <el-switch
+            v-model="classroomInfo.has_ac"
+            active-text="是"
+            inactive-text="否"
+          >
+          </el-switch>
+        </el-form-item>
+        <el-form-item label="是否启用" prop="status">
+          <el-switch v-model="statusBool" active-text="是" inactive-text="否">
+          </el-switch>
+        </el-form-item>
+        <el-form-item label="教室描述" prop="description">
+          <el-input
+            type="textarea"
+            autosize
+            placeholder="请输入内容"
+            v-model="classroomInfo.description"
+            style="width: 280px"
+          >
+          </el-input>
+        </el-form-item>
+      </div>
 
-    <el-form-item label="教室描述" prop="description">
-      <el-input
-        type="textarea"
-        autosize
-        placeholder="请输入内容"
-        v-model="classroomInfo.description"
-        style="width: 280px"
-      >
-      </el-input>
-    </el-form-item>
-
-    <el-form-item>
-      <el-button plain type="primary" @click="handleSubmit">提交</el-button>
-      <el-button plain @click="handleReset">重置</el-button>
-    </el-form-item>
-  </el-form>
+      <el-form-item>
+        <el-button plain type="primary" @click="handleSubmit">提交</el-button>
+        <el-button plain @click="handleReset">重置</el-button>
+      </el-form-item>
+    </el-form>
+  </div>
 </template>
 
 <script>
@@ -134,29 +128,26 @@ export default {
       building: Boolean,
       default: false,
     },
-    // 接收父组件传递的教室信息
     ClassroomInfo: {
       type: Object,
       default: () => ({
-        id: "HXGCZX201",
-        name: "HXGC2#201-化工分析实验室（一）",
-        campus: "铁门关校区",
-        building: "化学工程实训中心",
-        floor: "2",
-        capacity: 50,
-        type: "多媒体教室",
-        has_ac: false,
-        description: "",
-        department: "化学与材料工程学院",
-        status: "启用",
+        // id: "HXGCZX201",
+        // name: "HXGC2#201-化工分析实验室（一）",
+        // campus: "铁门关校区",
+        // building: "化学工程实训中心",
+        // floor: "2",
+        // capacity: 50,
+        // type: "多媒体教室",
+        // has_ac: false,
+        // description: "",
+        // department: "化学与材料工程学院",
+        // status: "启用",
       }),
     },
   },
   data() {
     return {
-      isInitializing: true,
       classroomInfo: this.ClassroomInfo, // 存储教室信息
-      localIsChange: this.isChange, // 存储是否改变的状态
       floorOptions: [
         {
           value: "选项1",
@@ -400,13 +391,13 @@ export default {
         type: [{ required: true, message: "请选择教室类型", trigger: "blur" }],
         department: [
           {
-            required: true,
-            message: "请选择开课院系或管理部门",
+            required: false,
+            message: "请选择管理部门",
             trigger: "blur",
           },
         ],
         description: [
-          { required: true, message: "请输入教室描述", trigger: "blur" },
+          { required: false, message: "请输入教室描述", trigger: "blur" },
         ],
         // has_ac: [
         //   { required: true, message: "请选择是否有空调", trigger: "change" },
@@ -415,25 +406,15 @@ export default {
         //   { required: true, message: "请输入教室状态", trigger: "blur" },
         // ],
       },
+      statusBool: this.ClassroomInfo.status === "启用" ? true : false,
     };
-  },
-  watch: {
-    classroomInfo: {
-      handler(_) {
-        if (!this.isInitializing) {
-          this.localIsChange = true;
-          this.$emit("change", this.localIsChange);
-        }
-        this.isInitializing = false; // 初始化完成后将标志位设为 false
-      },
-      deep: true,
-    },
   },
   methods: {
     handleSubmit() {
       this.$refs.formRef.validate((valid) => {
         if (valid) {
           // 通知父组件提交表单
+          this.classroomInfo.status = this.statusBool ? "启用" : "不启用";
           this.$emit("submit", this.classroomInfo);
         } else {
           console.log("表单验证失败");
@@ -441,10 +422,13 @@ export default {
       });
     },
     handleReset() {
-      // this.classroomInfo = { ...this.ClassroomInfo }; // 重置为初始的 ClassroomInfo
       this.classroomInfo = {};
     },
+    handleClassroomInfoChange(newVal) {
+      this.classroomInfo = newVal;
+    },
   },
+
   mounted() {
     // console.log("mounted")
   },
@@ -455,19 +439,59 @@ export default {
 </script>
 
 <style scoped>
-.base-info-section,
-.select-section {
+.content {
+  padding: 10px 160px;
+}
+
+.vital-info-section,
+.select-section,
+.other-info-section {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  margin-top: 10px;
+  align-items: center; /* 修改为垂直居中对齐 */
+  justify-content: center; /* 水平方向也居中对齐 */
+  margin-bottom: 30px;
+  border: 2px solid rgba(128, 128, 128, 0.489);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+  margin-bottom: 20px; /* 添加底部边距，使两个框之间有间隔 */
 }
+
+.vital-info-section:hover,
+.select-section:hover,
+.other-info-section:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.vital-title,
+.base-title,
+.other-title {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background-color: white;
+  padding: 0 5px;
+  z-index: 1;
+  font-weight: bold;
+}
+
 .select-section .el-form-item {
   flex: 0 0 calc(33.33% - 20px);
   margin: 10px;
 }
 
-.base-info-section .el-form-item {
+.vital-info-section .el-form-item {
   flex: 1;
+  min-width: 223px; /* 设置最小宽度，防止元素过窄 */
+  margin: 10px; /* 添加外边距，使元素之间有间隔 */
+}
+
+.other-info-section .el-form-item {
+  flex: 1;
+  min-width: 223px; /* 设置最小宽度，防止元素过窄 */
+  margin: 10px; /* 添加外边距，使元素之间有间隔 */
 }
 </style>

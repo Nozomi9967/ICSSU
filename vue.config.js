@@ -5,7 +5,8 @@ module.exports = defineConfig({
   lintOnSave: false,
   runtimeCompiler: true,
   devServer: {
-    proxy: 'http://localhost:8080'
+    proxy: 'http://localhost:8080',
+    port: 8082
   },
   configureWebpack: {
     resolve: {

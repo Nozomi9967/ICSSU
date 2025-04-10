@@ -23,19 +23,7 @@
               >
             </el-menu-item-group>
           </el-submenu>
-          <el-menu-item v-if="identity == admin" index="2" @click="toCourse">
-            <i class="el-icon-date"></i>
-            <span>全校课程</span>
-          </el-menu-item>
-          <el-menu-item v-if="identity == 0" index="6" @click="toTeacher">
-            <i class="el-icon-date"></i>
-            <span>全校教师</span>
-          </el-menu-item>
-          <el-menu-item v-if="identity == 0" index="4" @click="toInput">
-            <i class="el-icon-upload2"></i>
-            <span>信息输入</span>
-          </el-menu-item>
-          <el-submenu index="5">
+          <el-submenu index="2">
             <template slot="title">
               <i class="el-icon-s-data"></i>
               <span>统计分析</span>
@@ -49,20 +37,30 @@
               >
             </el-menu-item-group>
           </el-submenu>
-          <el-menu-item v-if="identity == admin" index="7" @click="toFlow">
-            <i class="el-icon-tickets"></i>
-            <span>流程审批</span>
+          <el-menu-item v-if="identity == admin" index="3" @click="toCourse">
+            <i class="el-icon-date"></i>
+            <span>全校课程</span>
           </el-menu-item>
-          <el-menu-item v-if="identity == admin" index="8" @click="toClassroom">
+          <el-menu-item v-if="identity == 0" index="4" @click="toTeacher">
+            <i class="el-icon-user"></i>
+            <span>全校教师</span>
+          </el-menu-item>
+          <el-menu-item v-if="identity == admin" index="5" @click="toClassroom">
             <i class="el-icon-reading"></i>
             <span>教室管理</span>
           </el-menu-item>
-          <el-menu-item v-if="identity !== admin" index="9" @click="toSchedule"
+
+          <el-menu-item v-if="identity == admin" index="6" @click="toFlow">
+            <i class="el-icon-tickets"></i>
+            <span>流程审批</span>
+          </el-menu-item>
+
+          <el-menu-item v-if="identity !== admin" index="7" @click="toSchedule"
             >我的课表</el-menu-item
           >
         </el-menu>
       </el-aside>
-      <el-main style="padding: 6px">
+      <el-main style="padding: 0">
         <router-view></router-view>
       </el-main>
     </el-container>
@@ -101,9 +99,6 @@ export default {
     },
     toCourse() {
       this.$router.push("/course").catch((err) => {});
-    },
-    toInput() {
-      this.$router.push("/input").catch((err) => {});
     },
     toUsage() {
       this.$router.push("/analysis/usage").catch((err) => {});

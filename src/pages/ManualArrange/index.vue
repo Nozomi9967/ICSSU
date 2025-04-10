@@ -531,7 +531,7 @@ export default {
         // Todo:下拉延长日程时，start为空
         return;
       }
-      console.log(start.getHours(), start.getMinutes());
+      // console.log(start.getHours(), start.getMinutes());
       var range = {
         start: new Time(start.getHours(), start.getMinutes()),
         end: new Time(end.getHours(), end.getMinutes()),
@@ -663,7 +663,7 @@ export default {
           names = res.data.data.teachers;
           var results = queryString ? names.filter((n) => n.id) : names;
 
-          console.log(results);
+          // console.log(results);
           clearTimeout(this.timeout);
           this.timeout = setTimeout(() => {
             cb(results);
@@ -674,7 +674,8 @@ export default {
         });
     },
     handleTeacherSelect(item) {
-      console.log(item);
+      // console.log(item);
+      this.courseInfo.teacher = item.name;
     },
     queryClassroomSearchAsync(queryString, cb) {
       // 请求数据
@@ -690,7 +691,7 @@ export default {
           names = res.data.data.classrooms;
           var results = queryString ? names.filter((n) => n.id) : names;
 
-          console.log(results);
+          // console.log(results);
           clearTimeout(this.timeout);
           this.timeout = setTimeout(() => {
             cb(results);
@@ -701,7 +702,8 @@ export default {
         });
     },
     handleClassroomSelect(item) {
-      console.log(item);
+      // console.log(item);
+      this.courseInfo.classroom = item.name;
     },
   },
   beforeDestroy() {

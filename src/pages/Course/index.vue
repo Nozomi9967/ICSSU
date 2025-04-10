@@ -1,133 +1,132 @@
 <template>
-  <div>
-    <el-menu
-      :default-active="activeIndex"
-      class="el-menu-demo"
-      mode="horizontal"
-      @select="handleMenuSelect"
-    >
-      <el-menu-item index="1">管理</el-menu-item>
-      <el-menu-item index="2">新增</el-menu-item>
-    </el-menu>
-    <!-- 新增 -->
-    <div style="padding: 8px" v-if="activeIndex == '2'">
-      <CourseForm
-        :courseInfo="courseInfo"
-        ref="courseFormRef"
-        @submit="handleSubmitCourseInput"
-      ></CourseForm>
-      <!-- excel输入 -->
-      <div class="excel-upload-section">
-        <el-upload
-          class="upload-demo"
-          :auto-upload="false"
-          drag
-          :action="getCourseFileUploadUrl"
-          :before-upload="handleBeforeUpload"
-          ref="courseUploadRef"
-          multiple
-        >
-          <i class="el-icon-upload"></i>
-          <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-          <div class="el-upload__tip" slot="tip">
-            只能上传.xlsx/.xls文件，且不超过500kb
-          </div>
-        </el-upload>
-        <el-button type="primary" @click="handleCourseUpload"
-          >上传<i class="el-icon-upload el-icon--right"></i
-        ></el-button>
-      </div>
-    </div>
-    <!-- 管理 -->
-    <div style="padding: 5px" v-if="activeIndex == '1'">
-      <el-table :data="tableData" border style="width: 90%; height: 680px">
-        <el-table-column fixed prop="course_id" label="课程编号" width="150">
-        </el-table-column>
-        <el-table-column prop="course_name" label="课程名称" width="120">
-        </el-table-column>
-        <!-- <el-table-column prop="category" label="类别" width="100">
-    </el-table-column> -->
-        <el-table-column prop="course_type" label="类型" width="150">
-        </el-table-column>
-        <el-table-column prop="course_property" label="属性" width="100">
-        </el-table-column>
-        <!-- <el-table-column prop="property" label="性质" width="100">
-    </el-table-column> -->
-        <!-- <el-table-column prop="ename" label="英文名" width="120">
-    </el-table-column> -->
-        <el-table-column prop="course_department" label="开课院系" width="120">
-        </el-table-column>
-        <!-- <el-table-column prop="on" label="是否启用" width="100">
-      <template slot-scope="scope">
-        <span>{{ scope.row.on? '启用' : '未启用' }}</span>
-      </template>
-  </el-table-column> -->
-        <el-table-column prop="pure_practice" label="是否纯实践环节" width="80">
-          <template slot-scope="scope">
-            <span>{{ scope.row.pure_practice ? "是" : "否" }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="total_hours" label="总学时" width="80">
-        </el-table-column>
-        <el-table-column prop="theory_hours" label="理论学时" width="80">
-        </el-table-column>
-        <el-table-column prop="test_hours" label="实验学时" width="80">
-        </el-table-column>
-        <el-table-column prop="computer_hours" label="上机学时" width="80">
-        </el-table-column>
-        <el-table-column prop="practice_hours" label="实践学时" width="80">
-        </el-table-column>
-        <el-table-column prop="other_hours" label="其他学时" width="80">
-        </el-table-column>
-        <el-table-column prop="course_credit" label="学分" width="80">
-        </el-table-column>
-        <el-table-column prop="weekly_hours" label="周学时" width="80">
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
-          <template slot-scope="scope">
-            <div class="buttons">
-              <el-button
-                @click="handleDeleteCourse(scope.row)"
-                type="text"
-                size="small"
-                >删除</el-button
-              >
-              <el-button
-                @click="handleModifyCourse(scope.row)"
-                type="text"
-                size="small"
-                >编辑</el-button
-              >
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <el-dialog
-        width="70%"
-        title="课程详细"
-        :visible.sync="dialogVisible"
-        :close-on-click-modal="false"
-        :before-close="handleClose"
-      >
-        <template v-if="dialogVisible">
+  <div class="content">
+    <el-tabs type="border-card">
+      <el-tab-pane label="管理">
+        <div style="padding: 5px">
+          <el-table :data="tableData" border style="width: 90%">
+            <el-table-column
+              fixed
+              prop="course_id"
+              label="课程编号"
+              width="180"
+            >
+            </el-table-column>
+            <el-table-column prop="course_name" label="课程名称" width="170">
+            </el-table-column>
+            <el-table-column prop="course_type" label="类型" width="150">
+            </el-table-column>
+            <el-table-column prop="course_property" label="属性" width="120">
+            </el-table-column>
+            <el-table-column
+              prop="course_department"
+              label="开课院系"
+              width="150"
+            >
+            </el-table-column>
+            <el-table-column
+              prop="pure_practice"
+              label="是否纯实践环节"
+              width="80"
+            >
+              <template slot-scope="scope">
+                <span>{{ scope.row.pure_practice ? "是" : "否" }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="total_hours" label="总学时" width="80">
+            </el-table-column>
+            <el-table-column prop="theory_hours" label="理论学时" width="80">
+            </el-table-column>
+            <el-table-column prop="test_hours" label="实验学时" width="80">
+            </el-table-column>
+            <el-table-column prop="computer_hours" label="上机学时" width="80">
+            </el-table-column>
+            <el-table-column prop="practice_hours" label="实践学时" width="80">
+            </el-table-column>
+            <el-table-column prop="other_hours" label="其他学时" width="80">
+            </el-table-column>
+            <el-table-column prop="course_credit" label="学分" width="80">
+            </el-table-column>
+            <el-table-column prop="weekly_hours" label="周学时" width="80">
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" width="100">
+              <template slot-scope="scope">
+                <div class="buttons">
+                  <el-button
+                    @click="handleDeleteCourse(scope.row)"
+                    type="text"
+                    size="small"
+                    >删除</el-button
+                  >
+                  <el-button
+                    @click="handleModifyCourse(scope.row)"
+                    type="text"
+                    size="small"
+                    >编辑</el-button
+                  >
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-dialog
+            width="80%"
+            title="课程详细"
+            :visible.sync="dialogVisible"
+            :close-on-click-modal="false"
+            :before-close="handleClose"
+          >
+            <template v-if="dialogVisible">
+              <CourseForm
+                courseFormRef
+                :CourseInfo="courseInfo"
+                @submit="handleModifySubmit"
+              ></CourseForm>
+            </template>
+          </el-dialog>
+          <!-- 分页 -->
+          <el-pagination
+            background
+            layout="prev, pager, next"
+            :total="Pagi.total"
+            :page-size="Pagi.pageSize"
+            :current-page="Pagi.current"
+            @current-change="handleGetCourses"
+          >
+          </el-pagination>
+        </div>
+      </el-tab-pane>
+      <el-tab-pane label="新增">
+        <div style="padding: 8px">
           <CourseForm
             :courseInfo="courseInfo"
-            @submit="handleSubmit"
-            @change="handleFormChange"
+            ref="courseInsertFormRef"
+            @submit="handleSubmitCourseInput"
           ></CourseForm>
-        </template>
-      </el-dialog>
-      <!-- 分页 -->
-      <el-pagination
-        background
-        layout="prev, pager, next"
-        :total="Pagi.total"
-        :page-size="Pagi.pageSize"
-        :current-page="Pagi.current"
-        @current-change="handleGetCourses"
-      >
-      </el-pagination>
-    </div>
+          <!-- excel输入 -->
+          <div class="excel-upload-section">
+            <el-upload
+              class="upload-demo"
+              :auto-upload="false"
+              drag
+              :action="getCourseFileUploadUrl"
+              :before-upload="handleBeforeUpload"
+              ref="courseUploadRef"
+              multiple
+            >
+              <i class="el-icon-upload"></i>
+              <div class="el-upload__text">
+                将文件拖到此处，或<em>点击上传</em>
+              </div>
+              <div class="el-upload__tip" slot="tip">
+                只能上传.xlsx/.xls文件，且不超过500kb
+              </div>
+            </el-upload>
+            <el-button type="primary" @click="handleCourseUpload"
+              >上传<i class="el-icon-upload el-icon--right"></i
+            ></el-button>
+          </div>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -143,10 +142,19 @@ export default {
   mounted() {
     this.handleGetCourses();
   },
-  watch: {},
+  watch: {
+    courseInfo: {
+      immediate: true,
+      deep: true,
+      handler(newValue) {
+        if (this.$refs.courseFormRef) {
+          this.$refs.courseFormRef.handleCourseInfoChange(newValue);
+        }
+      },
+    },
+  },
   data() {
     return {
-      activeIndex: "1",
       tableData: [],
       serverUrl: SERVER_URL,
       coursePrefix: COURSE_PREFIX,
@@ -248,12 +256,11 @@ export default {
           loading.close();
         });
     },
-    handleSubmitCourseInput() {
-      this.$refs.courseFormRef.$refs.formRef.validate((valid) => {
+    handleSubmitCourseInput(courseInfo) {
+      this.$refs.courseInsertFormRef.$refs.formRef.validate((valid) => {
         if (valid) {
-          const jsonInfo = JSON.stringify(this.courseInfo);
           axios
-            .post(this.getCourseInsertUrl, jsonInfo, {
+            .post(this.getCourseInsertUrl, courseInfo, {
               headers: {
                 "Content-Type": "application/json",
               },
@@ -264,7 +271,7 @@ export default {
                   type: "success",
                   message: "新增成功",
                 });
-                this.handleCourseReset();
+                this.handleCourseInputReset();
               } else {
                 this.$message.error("新增失败!");
               }
@@ -279,11 +286,8 @@ export default {
         }
       });
     },
-    handleCourseReset() {
-      this.$refs.courseFormRef.handleReset();
-    },
-    handleFormChange(isChange) {
-      this.isChange = isChange;
+    handleCourseInputReset() {
+      this.$refs.courseInsertFormRef.handleReset();
     },
     handleGetCourses(newPage) {
       if (newPage) {
@@ -369,7 +373,7 @@ export default {
     handleReset() {
       this.courseInfo = {};
     },
-    handleSubmit(newCourseInfo) {
+    handleModifySubmit(newCourseInfo) {
       axios
         .put(`${this.serverUrl}${this.coursePrefix}/update`, newCourseInfo)
         .then((res) => {
@@ -396,20 +400,20 @@ export default {
           });
         });
     },
-    handleMenuSelect(_, keyPath) {
-      this.activeIndex = keyPath[0];
-    },
   },
 };
 </script>
 
 <style lang="css" scoped>
+.content {
+  padding: 10px 10px;
+}
+
 .el-dialog .course-form .course_id {
   width: 100px !important;
 }
 
 .excel-upload-section {
-  margin-top: 60px;
   text-align: center;
 }
 
