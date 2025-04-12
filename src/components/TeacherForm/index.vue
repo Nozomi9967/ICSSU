@@ -44,7 +44,7 @@
               v-for="item in ethnicityOptions"
               :key="item.value"
               :label="item.label"
-              :value="item.value"
+              :value="item.label"
             >
             </el-option>
           </el-select>
@@ -69,6 +69,10 @@
             active-text="是"
             inactive-text="否"
           ></el-switch>
+        </el-form-item>
+        <el-form-item label="是否启用" prop="status">
+          <el-switch v-model="statusBool" active-text="是" inactive-text="否">
+          </el-switch>
         </el-form-item>
         <el-form-item label="职称" prop="title">
           <el-input
@@ -98,16 +102,16 @@ export default {
     TeacherInfo: {
       type: Object,
       default: () => ({
-        id: "0304",
-        name: "李凤娟",
-        english_name: "",
-        gender: "女性",
-        ethnicity: "汉族",
-        department: "化学与材料工程学院",
-        title: "",
-        category: "",
-        is_external: false,
-        status: "",
+        // id: "0304",
+        // name: "李凤娟",
+        // english_name: "",
+        // gender: "女性",
+        // ethnicity: "汉族",
+        // department: "化学与材料工程学院",
+        // title: "",
+        // category: "",
+        // is_external: false,
+        // status: "",
       }),
     },
   },
@@ -213,7 +217,9 @@ export default {
           },
         ],
         gender: [{ required: true, message: "请选择性别", trigger: "change" }],
-        ethnicity: [{ required: true, message: "请选择民族", trigger: "blur" }],
+        ethnicity: [
+          { required: false, message: "请选择民族", trigger: "blur" },
+        ],
         department: [
           { required: true, message: "请输入部门", trigger: "blur" },
           {
@@ -242,6 +248,7 @@ export default {
           },
         ],
       },
+      statusBool: false,
     };
   },
 
@@ -250,6 +257,7 @@ export default {
       this.$refs.formRef.validate((valid) => {
         if (valid) {
           // 通知父组件提交表单
+          this.teacherInfo.status = this.statusBool ? "启用" : "不启用";
           this.$emit("submit", this.teacherInfo);
         } else {
           console.log("表单验证失败");
@@ -290,8 +298,7 @@ export default {
 }
 
 .vital-info-section .el-input,
-.select-section .el-input,
-.other-info-section .el-input {
+.select-section .el-input {
   width: 223px;
 }
 
@@ -300,6 +307,10 @@ export default {
 .other-info-section:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
+}
+
+.select-section {
+  padding-left: 35px;
 }
 
 .vital-title,
@@ -327,7 +338,15 @@ export default {
 
 .other-info-section .el-form-item {
   flex: 1;
-  min-width: 223px;
-  margin: 10px;
+  min-width: 160px;
+  margin-top: 15px;
+}
+
+/* .other-info-section {
+  gap: 10px;
+} */
+
+.other-info-section .el-input {
+  width: 160px;
 }
 </style>

@@ -11,15 +11,11 @@ import Usage from "@/pages/Analysis/Usage"
 import Quantity from "@/pages/Analysis/Quantity"
 import Teacher from "@/pages/Teacher"
 import Classroom from "@/pages/Classroom"
+import Class from "@/pages/Class"
+import MyTable from "@/pages/MyTable"
 
 Vue.use(VueRouter)
 
-// // 保存原有的push方法
-// const routerPush = VueRouter.prototype.push;
-// // 重写push方法，捕获错误并忽略
-// VueRouter.prototype.push = function (location) {
-//   return routerPush.call(this, location).catch(err => { });
-// };
 
 export default new VueRouter({
   routes: [
@@ -40,6 +36,10 @@ export default new VueRouter({
       component: Classroom
     },
     {
+      path: '/class',
+      component: Class
+    },
+    {
       path: '/schedule',
       component: Schedule
     },
@@ -50,6 +50,10 @@ export default new VueRouter({
     {
       path: '/login',
       component: Login
+    },
+    {
+      path: '/mytable',
+      component: MyTable
     },
     {
       path: '/home',

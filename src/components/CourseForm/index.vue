@@ -73,16 +73,6 @@
           </el-form-item>
         </div>
       </div>
-      <!-- <el-form-item label="课程性质" prop="property">
-      <el-select v-model="courseInfo.property" placeholder="请选择">
-        <el-option v-for="item in propertyOptions" :key="item.value" :label="item.label" :value="item.value">
-        </el-option>
-      </el-select>
-    </el-form-item> -->
-      <!-- <el-form-item label="课程英文名" prop="ename">
-      <el-input v-model="courseInfo.ename"></el-input>
-    </el-form-item> -->
-
       <div class="middle">
         <span class="middle-title">其它信息</span>
         <div class="study-hours-section1">
@@ -173,20 +163,20 @@ export default {
     CourseInfo: {
       type: Object,
       default: () => ({
-        course_id: "570101KB0A08-2",
-        course_name: "HTML5+JavaScript程 序设计(任选)",
-        course_type: "B类((理论+实践)课)",
-        course_property: "专业课选修课",
-        course_credit: 3,
-        course_department: "汽车与智能交通学院",
-        total_hours: 40,
-        theory_hours: 0,
-        test_hours: 0,
-        computer_hours: 0,
-        practice_hours: 40,
-        other_hours: 0,
-        weekly_hours: 5,
-        pure_practice: true,
+        // course_id: "570101KB0A08-2",
+        // course_name: "HTML5+JavaScript程 序设计(任选)",
+        // course_type: "B类((理论+实践)课)",
+        // course_property: "专业课选修课",
+        // course_credit: 3,
+        // course_department: "汽车与智能交通学院",
+        // total_hours: 40,
+        // theory_hours: 0,
+        // test_hours: 0,
+        // computer_hours: 0,
+        // practice_hours: 40,
+        // other_hours: 0,
+        // weekly_hours: 5,
+        // pure_practice: true,
       }),
     },
   },

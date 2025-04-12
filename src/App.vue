@@ -49,13 +49,17 @@
             <i class="el-icon-reading"></i>
             <span>教室管理</span>
           </el-menu-item>
+          <el-menu-item v-if="identity == admin" index="6" @click="toClass">
+            <i class="el-icon-reading"></i>
+            <span>班级管理</span>
+          </el-menu-item>
 
-          <el-menu-item v-if="identity == admin" index="6" @click="toFlow">
+          <el-menu-item v-if="identity == admin" index="7" @click="toFlow">
             <i class="el-icon-tickets"></i>
             <span>流程审批</span>
           </el-menu-item>
 
-          <el-menu-item v-if="identity !== admin" index="7" @click="toSchedule"
+          <el-menu-item v-if="identity !== admin" index="8" @click="toMyTable"
             >我的课表</el-menu-item
           >
         </el-menu>
@@ -114,6 +118,12 @@ export default {
     },
     toClassroom() {
       this.$router.push("/classroom").catch((err) => {});
+    },
+    toClass() {
+      this.$router.push("/class").catch((err) => {});
+    },
+    toMyTable() {
+      this.$router.push("/mytable").catch((err) => {});
     },
   },
 };

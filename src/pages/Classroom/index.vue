@@ -91,7 +91,7 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="Building" width="150">
+                <el-table-column prop="Building" width="180">
                   <template v-slot:header>
                     <div class="header-font">
                       <el-dropdown
@@ -116,7 +116,7 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="Floor" width="80">
+                <el-table-column prop="Floor" width="100">
                   <template v-slot:header>
                     <div class="header-font">
                       <el-dropdown
@@ -137,7 +137,7 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="Capacity" label="容量" width="80">
+                <el-table-column prop="Capacity" label="容量" width="100">
                   <template v-slot:header>
                     <div class="header-font">
                       <el-dropdown
@@ -213,7 +213,7 @@
                 </el-table-column>
                 <el-table-column prop="Description" label="描述" width="120">
                 </el-table-column>
-                <el-table-column prop="Department" label="所属院系" width="160">
+                <el-table-column prop="Department" label="所属院系" width="180">
                   <template v-slot:header>
                     <div class="header-font">
                       <el-dropdown
@@ -238,7 +238,7 @@
                     </div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="Status" label="状态" width="80">
+                <el-table-column prop="Status" label="状态" width="100">
                   <template v-slot:header>
                     <div class="header-font">
                       <el-dropdown
@@ -313,7 +313,7 @@
               <ClassroomForm
                 ref="classroomFormRef"
                 :ClassroomInfo="classroomInfo"
-                @submit="handleSubmit"
+                @submit="handleManageSubmit"
               ></ClassroomForm>
             </template>
           </el-dialog>
@@ -338,7 +338,7 @@
           <ClassroomForm
             :classroomInfo="classroomInsertInfo"
             ref="classroomInsertFormRef"
-            @submit="handleSubmitClassroomInput"
+            @submit="handleInsertSubmit"
           ></ClassroomForm>
           <!-- excel输入 -->
           <div class="excel-upload-section">
@@ -409,7 +409,7 @@ export default {
         statusList: ["启用", "不启用"],
       },
       Pagi: {
-        pageSize: 10,
+        pageSize: 12,
         total: 100,
         current: 1,
       },
@@ -487,6 +487,7 @@ export default {
     },
   },
   methods: {
+    // 新增
     handleBeforeUpload(file) {
       // 检查文件类型和大小
       const isXlsx = [".xlsx", ".xls"].some((ext) => file.name.endsWith(ext));
@@ -512,6 +513,7 @@ export default {
         text: "文件正在上传中，请耐心等待",
         spinner: "el-icon-loading",
         background: "rgba(0,0,0,0.7)",
+        zIndex: 4000,
       });
       const formData = new FormData();
       uploadFiles.forEach((file) => {
@@ -544,14 +546,13 @@ export default {
           loading.close();
         });
     },
-    handleSubmitClassroomInput(info) {
-      // console.log(info);
+    handleInsertSubmit(info) {
       axios
         .post(this.getClassroomInsertUrl, info)
         .then((res) => {
           if (res.data.status == 200) {
             this.$message.success("新增成功");
-            this.handleClassroomReset();
+            this.handleInsertReset();
             this.handleGetClassrooms(); // 刷新
           } else {
             this.$message.error("新增失败!");
@@ -562,8 +563,126 @@ export default {
           this.$message.error(`新增失败！${errMsg}`);
         });
     },
-    handleClassroomReset() {
-      this.$refs.classroomInsertFormRef.handleReset();
+    handleInsertReset() {
+      this.$refs.classroomInsertFormRef.handleManageReset();
+    },
+    // 管理
+    handleProcessTableData() {
+      this.Pagi.total = this.tableData.length;
+
+      // 提取所有 Campus 的种类
+      const campusSet = new Set();
+      this.tableData.forEach((item) => {
+        if (item.Campus) {
+          campusSet.add(item.Campus);
+        }
+      });
+      this.list.campusList = Array.from(campusSet);
+
+      // 提取所有 Building 的种类
+      const buildingSet = new Set();
+      this.tableData.forEach((item) => {
+        if (item.Building) {
+          buildingSet.add(item.Building);
+        }
+      });
+      this.list.buildingList = Array.from(buildingSet);
+
+      // 提取所有 Floor 的种类
+      const floorSet = new Set();
+      this.tableData.forEach((item) => {
+        if (item.Floor) {
+          floorSet.add(item.Floor);
+        }
+      });
+      this.list.floorList = Array.from(floorSet);
+      this.list.floorList.sort((a, b) => a - b); // 按数值从小到大排序
+      this.filter.campus.activeCampusItems = Array(
+        this.list.campusList.length
+      ).fill(false);
+      this.filter.building.activeBuildingItems = Array(
+        this.list.buildingList.length
+      ).fill(false);
+      this.filter.floor.activeFloorItems = Array(
+        this.list.floorList.length
+      ).fill(false);
+      this.filter.campus.campusTagIdIndex = 2;
+      this.filter.building.buildingTagIdIndex =
+        this.filter.campus.campusTagIdIndex + this.list.campusList.length;
+      this.filter.floor.floorTagIdIndex =
+        this.filter.building.buildingTagIdIndex + this.list.buildingList.length;
+
+      // 提取所有 Capacity 的种类
+      const capacitySet = new Set();
+      this.tableData.forEach((item) => {
+        if (item.Capacity) {
+          capacitySet.add(item.Capacity);
+        }
+      });
+      this.list.capacityList = Array.from(capacitySet);
+      this.list.capacityList.sort((a, b) => a - b); // 按数值从小到大排序
+
+      // 提取所有 Type 的种类
+      const typeSet = new Set();
+      this.tableData.forEach((item) => {
+        if (item.Type) {
+          typeSet.add(item.Type);
+        }
+      });
+      this.list.typeList = Array.from(typeSet);
+
+      // 提取所有 Department 的种类
+      const departmentSet = new Set();
+      this.tableData.forEach((item) => {
+        if (item.Department) {
+          departmentSet.add(item.Department);
+        }
+      });
+      this.list.departmentList = Array.from(departmentSet);
+
+      // 检查是否有空调的数据
+      this.filter.hasAc.hasAcExists = [false, false];
+      this.tableData.forEach((item) => {
+        if (item.HasAC) {
+          this.filter.hasAc.hasAcExists[0] = true;
+        } else {
+          this.filter.hasAc.hasAcExists[1] = true;
+        }
+      });
+
+      // 检查状态的数据
+      this.filter.status.statusExists = [false, false];
+      this.tableData.forEach((item) => {
+        if (item.Status === "启用") {
+          this.filter.status.statusExists[0] = true;
+        } else if (item.Status === "不启用") {
+          this.filter.status.statusExists[1] = true;
+        }
+      });
+
+      this.filter.capacity.activeCapacityItems = Array(
+        this.list.capacityList.length
+      ).fill(false);
+      this.filter.type.activeTypeItems = Array(this.list.typeList.length).fill(
+        false
+      );
+      this.activeHasAcItems = Array(this.list.hasAcList.length).fill(false);
+      this.filter.department.activeDepartmentItems = Array(
+        this.list.departmentList.length
+      ).fill(false);
+      this.activeStatusItems = Array(this.list.statusList.length).fill(false);
+
+      this.filter.capacity.capacityTagIdIndex =
+        this.filter.floor.floorTagIdIndex + this.list.floorList.length;
+      this.filter.type.typeTagIdIndex =
+        this.filter.capacity.capacityTagIdIndex + this.list.capacityList.length;
+      this.filter.hasAc.hasAcTagIdIndex =
+        this.filter.type.typeTagIdIndex + this.list.typeList.length;
+      this.filter.department.departmentTagIdIndex =
+        this.filter.hasAc.hasAcTagIdIndex + 1;
+      this.filter.status.statusTagIdIndex =
+        this.filter.department.departmentTagIdIndex +
+        this.list.departmentList.length;
     },
     handleGetClassrooms() {
       axios
@@ -572,127 +691,7 @@ export default {
           // 请求成功
           if (res.data.status === 200) {
             this.tableData = res.data.data;
-            this.Pagi.total = this.tableData.length;
-
-            // 提取所有 Campus 的种类
-            const campusSet = new Set();
-            this.tableData.forEach((item) => {
-              if (item.Campus) {
-                campusSet.add(item.Campus);
-              }
-            });
-            this.list.campusList = Array.from(campusSet);
-
-            // 提取所有 Building 的种类
-            const buildingSet = new Set();
-            this.tableData.forEach((item) => {
-              if (item.Building) {
-                buildingSet.add(item.Building);
-              }
-            });
-            this.list.buildingList = Array.from(buildingSet);
-
-            // 提取所有 Floor 的种类
-            const floorSet = new Set();
-            this.tableData.forEach((item) => {
-              if (item.Floor) {
-                floorSet.add(item.Floor);
-              }
-            });
-            this.list.floorList = Array.from(floorSet);
-            this.list.floorList.sort((a, b) => a - b); // 按数值从小到大排序
-            this.filter.campus.activeCampusItems = Array(
-              this.list.campusList.length
-            ).fill(false);
-            this.filter.building.activeBuildingItems = Array(
-              this.list.buildingList.length
-            ).fill(false);
-            this.filter.floor.activeFloorItems = Array(
-              this.list.floorList.length
-            ).fill(false);
-            this.filter.campus.campusTagIdIndex = 2;
-            this.filter.building.buildingTagIdIndex =
-              this.filter.campus.campusTagIdIndex + this.list.campusList.length;
-            this.filter.floor.floorTagIdIndex =
-              this.filter.building.buildingTagIdIndex +
-              this.list.buildingList.length;
-
-            // 提取所有 Capacity 的种类
-            const capacitySet = new Set();
-            this.tableData.forEach((item) => {
-              if (item.Capacity) {
-                capacitySet.add(item.Capacity);
-              }
-            });
-            this.list.capacityList = Array.from(capacitySet);
-            this.list.capacityList.sort((a, b) => a - b); // 按数值从小到大排序
-
-            // 提取所有 Type 的种类
-            const typeSet = new Set();
-            this.tableData.forEach((item) => {
-              if (item.Type) {
-                typeSet.add(item.Type);
-              }
-            });
-            this.list.typeList = Array.from(typeSet);
-
-            // 提取所有 Department 的种类
-            const departmentSet = new Set();
-            this.tableData.forEach((item) => {
-              if (item.Department) {
-                departmentSet.add(item.Department);
-              }
-            });
-            this.list.departmentList = Array.from(departmentSet);
-
-            // 检查是否有空调的数据
-            this.filter.hasAc.hasAcExists = [false, false];
-            this.tableData.forEach((item) => {
-              if (item.HasAC) {
-                this.filter.hasAc.hasAcExists[0] = true;
-              } else {
-                this.filter.hasAc.hasAcExists[1] = true;
-              }
-            });
-
-            // 检查状态的数据
-            this.filter.status.statusExists = [false, false];
-            this.tableData.forEach((item) => {
-              if (item.Status === "启用") {
-                this.filter.status.statusExists[0] = true;
-              } else if (item.Status === "不启用") {
-                this.filter.status.statusExists[1] = true;
-              }
-            });
-
-            this.filter.capacity.activeCapacityItems = Array(
-              this.list.capacityList.length
-            ).fill(false);
-            this.filter.type.activeTypeItems = Array(
-              this.list.typeList.length
-            ).fill(false);
-            this.activeHasAcItems = Array(this.list.hasAcList.length).fill(
-              false
-            );
-            this.filter.department.activeDepartmentItems = Array(
-              this.list.departmentList.length
-            ).fill(false);
-            this.activeStatusItems = Array(this.list.statusList.length).fill(
-              false
-            );
-
-            this.filter.capacity.capacityTagIdIndex =
-              this.filter.floor.floorTagIdIndex + this.list.floorList.length;
-            this.filter.type.typeTagIdIndex =
-              this.filter.capacity.capacityTagIdIndex +
-              this.list.capacityList.length;
-            this.filter.hasAc.hasAcTagIdIndex =
-              this.filter.type.typeTagIdIndex + this.list.typeList.length;
-            this.filter.department.departmentTagIdIndex =
-              this.filter.hasAc.hasAcTagIdIndex + 1;
-            this.filter.status.statusTagIdIndex =
-              this.filter.department.departmentTagIdIndex +
-              this.list.departmentList.length;
+            this.handleProcessTableData();
           } else {
             this.$message({
               type: "error",
@@ -752,10 +751,10 @@ export default {
       };
       this.dialogVisible = true;
     },
-    handleReset() {
+    handleManageReset() {
       this.classroomInfo = {};
     },
-    handleSubmit(newClassroomInfo) {
+    handleManageSubmit(newClassroomInfo) {
       axios
         .put(
           `${this.serverUrl}${this.classroomPrefix}/update/${newClassroomInfo.id}`,
@@ -786,7 +785,6 @@ export default {
         });
     },
     handleCurrentChange(newValue) {
-      // console.log(newValue);
       this.Pagi.current = newValue;
     },
     handleCommand(command, type) {
@@ -974,7 +972,6 @@ export default {
       };
       this.tagsList.push(tag);
     },
-    // 在 filterTableData 方法中新增筛选逻辑
     filterTableData() {
       let filteredData = this.tableData;
       for (let item of this.filter.curSearch) {
@@ -1068,7 +1065,6 @@ export default {
           : this.Pagi.current * this.Pagi.pageSize
       );
     },
-    // 在 handleCloseTag 方法中新增对新筛选条件的处理逻辑
     handleCloseTag(targetItem) {
       this.tagsList = this.tagsList.filter((item) => item.id !== targetItem.id);
       if (targetItem.id === 0) {
@@ -1234,9 +1230,6 @@ export default {
   padding: 4px;
 }
 
-.el-dialog .classroom-form .id {
-  width: 100px !important;
-}
 .excel-upload-section {
   margin-top: -30px;
   height: 300px;
@@ -1251,10 +1244,6 @@ export default {
 
 .upload-button {
   bottom: 0px;
-}
-
-.el-button {
-  margin: 10px;
 }
 
 .buttons {
@@ -1289,11 +1278,6 @@ export default {
   padding-right: 10px;
 }
 
-/* .tags-section {
-  display: flex;
-  align-items: center;
-} */
-
 .tags {
   width: 214px;
   padding: 6px;
@@ -1310,30 +1294,17 @@ export default {
   width: 214px;
 }
 
-::v-deep .el-dropdown-menu__item.active-item {
+/* ::v-deep .el-dropdown-menu__item.active-item {
   background-color: #409eff !important;
   color: white;
-}
+} */
 
 ::v-deep.el-table td,
 ::v-deep.el-table th {
-  padding: 5px;
+  padding: 10px;
 }
 
 .header-font {
   font-size: 16px;
-}
-
-::v-deep.el-popover {
-  z-index: 3000 !important;
-}
-
-.el-dropdown-link {
-  cursor: pointer;
-  font-size: 16px;
-  color: gray;
-}
-.el-icon-arrow-down {
-  font-size: 12px;
 }
 </style>
