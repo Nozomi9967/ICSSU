@@ -23,7 +23,7 @@
           style="width: 600px"
           v-model="schedule.id"
           :fetch-suggestions="getFetchSuggestions"
-          placeholder="请输入授课教师"
+          :placeholder="getPlaceholderStr"
           @select="handleDimenItemSelect"
         >
           <template slot-scope="{ item }">
@@ -43,6 +43,19 @@
           </el-select>
           <el-button slot="append" icon="el-icon-search"></el-button>
         </el-autocomplete>
+        <span style="margin-left: 30px; margin-right: 10px">学期</span>
+        <el-select v-model="schedule.semester" placeholder="请选择学期">
+          <el-option
+            v-for="item in semesterOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.label"
+          >
+          </el-option>
+        </el-select>
+        <el-button type="primary" plain @click="handleSearchOut"
+          >查询课表</el-button
+        >
       </div>
       <!-- 日历区域 -->
       <FullCalendar :options="calendarOptions" ref="calendarRef" />
@@ -91,7 +104,7 @@
             </el-autocomplete>
           </el-form-item> -->
 
-          <el-form-item label="排课编号" prop="schedule_id">
+          <el-form-item label="排课编号" prop="id">
             <el-autocomplete
               style="width: 600px"
               v-model="scheduleInfo.id"
@@ -132,7 +145,7 @@
               style="flex: 1; min-width: 150px; max-width: 30%"
             >
               <el-select
-                v-model="startClass"
+                v-model="scheduleInfo.startClass"
                 placeholder="请选择开始节次"
                 @change="validateSelection"
               >
@@ -155,7 +168,7 @@
               style="flex: 1; min-width: 150px; max-width: 30%"
             >
               <el-select
-                v-model="endClass"
+                v-model="scheduleInfo.endClass"
                 placeholder="请选择结束节次"
                 @change="validateSelection"
               >
@@ -177,7 +190,7 @@
               style="flex: 1; min-width: 150px; max-width: 30%"
             >
               <el-select
-                v-model="startWeekNumber"
+                v-model="scheduleInfo.startWeekNumber"
                 placeholder="请选择开始周数"
                 @change="validateWeekNumberSelection"
               >
@@ -200,7 +213,7 @@
               style="flex: 1; min-width: 150px; max-width: 30%"
             >
               <el-select
-                v-model="endWeekNumber"
+                v-model="scheduleInfo.endWeekNumber"
                 placeholder="请选择结束周数"
                 @change="validateWeekNumberSelection"
               >
@@ -218,7 +231,7 @@
           <!-- 星期几选择框 -->
           <el-form-item label="星期几" prop="selectedWeekDay">
             <el-select
-              v-model="selectedWeekDay"
+              v-model="scheduleInfo.selectedWeekDay"
               placeholder="请选择星期几"
               @change="validateWeekDaySelection"
             >
@@ -232,7 +245,7 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button @click="handleCreateEvent">提交</el-button>
+            <el-button @click="handleSubmitSchedule">提交</el-button>
             <el-button @click="handleClose">取消</el-button>
             <el-button @click="resetForm">重置</el-button>
           </el-form-item>
@@ -252,7 +265,13 @@
         width="200"
       >
         <div class="popover-content">
-          <div class="popover-text">{{ selectedEvent.location }}</div>
+          <div class="popover-text">
+            教室编号：{{
+              (selectedEvent.extendedProps &&
+                selectedEvent.extendedProps.classroom_id) ||
+              ""
+            }}
+          </div>
           <div class="button-group">
             <el-button type="text" @click="handleModifyFocusEvent"
               >编辑</el-button
@@ -285,7 +304,7 @@ import FullCalendar from "@fullcalendar/vue";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { addWeeks, startOfYear, getISOWeek } from "date-fns";
+import { addWeeks, getISOWeek } from "date-fns";
 
 export default {
   components: {
@@ -358,8 +377,6 @@ export default {
         },
         slotLabelClassNames: "fc-hour-height",
       },
-      startClass: null, //开始节次
-      endClass: null, //结束节次
       classOptions: [
         //节次选项
         { value: 1, label: "第1节课" },
@@ -413,10 +430,10 @@ export default {
           end: { hour: 16, minute: 0 },
         },
       ],
-      selectedDimen: null, //维度：教师/教室
+      selectedDimen: 1, //维度：教师/教室
       searchKeyWord: "", //搜索关键字
       schedule: {
-        id: undefined,
+        id: "0558",
         semester: "2024-2025-1",
       },
       isModify: false,
@@ -426,30 +443,18 @@ export default {
       popoverVisible: false,
       curInfo: {},
       curScheduleDetail: {},
-      monthMap: {
-        Jan: 1,
-        Feb: 2,
-        Mar: 3,
-        Apr: 4,
-        May: 5,
-        Jun: 6,
-        Jul: 7,
-        Aug: 8,
-        Sep: 9,
-        Oct: 10,
-        Nov: 11,
-        Dec: 12,
-      },
       selectedEvent: {},
       scheduleInfo: {
         id: "",
-        name: "",
-        startToEndValue: [],
+        classroom: null,
+        endClass: null, //结束节次
+        startClass: null, //开始节次
+        startWeekNumber: null, // 开始周数
+        endWeekNumber: null, // 结束周数
+        selectedWeekDay: null, // 选中的星期几
       },
       dialogVisible: false,
       state: "",
-      startWeekNumber: null, // 开始周数
-      endWeekNumber: null, // 结束周数
       weekNumberOptions: [], // 周数选项数组，后续根据实际情况填充
       weekDayOptions: [
         { value: 1, label: "星期一" },
@@ -460,7 +465,17 @@ export default {
         { value: 6, label: "星期六" },
         { value: 7, label: "星期日" },
       ], // 星期几选项数组
-      selectedWeekDay: null, // 选中的星期几
+      semesterOptions: [
+        {
+          value: 1,
+          label: "2024-2025-1",
+        },
+        {
+          value: 2,
+          label: "2024-2025-2",
+        },
+      ],
+      tableData: [],
     };
   },
   mounted() {
@@ -515,6 +530,12 @@ export default {
     getInsertScheduleResultUrl() {
       return "http://localhost:8080/table/create";
     },
+    getModifyScheduleResultUrl() {
+      return "http://localhost:8080/table/update";
+    },
+    isSearchOut() {
+      return this.schedule.id !== undefined && this.schedule.semester;
+    },
   },
   directives: {
     clickOutside: {
@@ -540,23 +561,32 @@ export default {
     },
   },
   methods: {
+    handleSearchOut() {
+      if (!this.isSearchOut) {
+        this.$message.error("请输入id或选择学期！！！");
+        return;
+      }
+      this.fetchTable();
+    },
     validateWeekNumberSelection() {
       // 若开始周数或结束周数为空，不进行校验
-      if (!this.startWeekNumber || !this.endWeekNumber) {
+      if (
+        !this.scheduleInfo.startWeekNumber ||
+        !this.scheduleInfo.endWeekNumber
+      ) {
         return;
       }
       // 检查开始周数是否大于结束周数
-      if (this.startWeekNumber > this.endWeekNumber) {
+      if (this.scheduleInfo.startWeekNumber > this.scheduleInfo.endWeekNumber) {
         this.$message({
           type: "error",
           message: "开始周数不得大于结束周数",
         });
       }
     },
-
     validateWeekDaySelection() {
       // 可以在这里添加对星期几选择的其他验证逻辑
-      if (!this.selectedWeekDay) {
+      if (!this.scheduleInfo.selectedWeekDay) {
         this.$message({
           type: "error",
           message: "请选择星期几",
@@ -572,53 +602,49 @@ export default {
     },
     handleDimenItemSelect(item) {
       this.schedule.id = item.id;
-      this.fetchTable();
-      this.$message.success("查询课表成功");
     },
     handleRenderTableData() {
       // 获取今年 3 月 3 日的日期对象
       const startDate = new Date(new Date().getFullYear(), 2, 3);
-
-      this.teacherTableData.forEach((item) => {
+      // console.log(this.tableData);
+      this.tableData.forEach((item) => {
         const weekNums = item.time_slots[0].WeekNumbers;
         const weekDay = item.time_slots[0].Weekday;
         const startPeriod = item.time_slots[0].StartPeriod;
         const duration = item.time_slots[0].Duration;
-        console.log(weekNums, weekDay, startPeriod, duration);
+        // console.log(weekNums, weekDay, startPeriod, duration);
 
         // 遍历每个周数
-        weekNums.forEach((weekNum) => {
-          // 计算课程所在的日期
-          const daysOffset = (weekNum - 1) * 7 + (weekDay - 1);
-          console.log(daysOffset, "***");
-          const courseDate = new Date(startDate.getTime());
-          courseDate.setDate(courseDate.getDate() + daysOffset);
+        if (weekNums) {
+          weekNums.forEach((weekNum) => {
+            // 计算课程所在的日期
+            const daysOffset = (weekNum - 1) * 7 + (weekDay - 1);
+            const courseDate = new Date(startDate.getTime());
+            courseDate.setDate(courseDate.getDate() + daysOffset);
 
-          // 计算课程开始时间
-          const startTime = new Date(courseDate.getTime());
-          startTime.setHours(8 + startPeriod - 1);
-          startTime.setMinutes(0);
+            // 计算课程开始时间
+            const startTime = new Date(courseDate.getTime());
+            startTime.setHours(8 + startPeriod - 1);
+            startTime.setMinutes(0);
 
-          // 计算课程结束时间
-          const endTime = new Date(startTime.getTime());
-          endTime.setHours(endTime.getHours() + duration);
+            // 计算课程结束时间
+            const endTime = new Date(startTime.getTime());
+            endTime.setHours(endTime.getHours() + duration);
 
-          const newEvent = {
-            title: item.course_name,
-            start: startTime,
-            end: endTime,
-          };
-
-          // if (this.calendar.addEvent(newEvent)) {
-          //   console.log("添加成功");
-          // } else {
-          //   console.log("添加失败", newEvent);
-          // }
-          if (!this.calendar.addEvent(newEvent)) {
-            this.$message.error("初始化课表失败");
-            return;
-          }
-        });
+            const newEvent = {
+              title: item.course_name,
+              start: startTime,
+              end: endTime,
+              classroom_id: item.classroom_id,
+              schedule_result_id: item.id,
+              time_slots: item.time_slots,
+            };
+            if (!this.calendar.addEvent(newEvent)) {
+              this.$message.error("初始化课表失败");
+              return;
+            }
+          });
+        }
       });
     },
     fetchTable() {
@@ -643,27 +669,29 @@ export default {
           console.log("switch出错");
           return;
       }
-
       axios
         .get(url, { params })
         .then((response) => {
-          this.teacherTableData = response.data.ClassTables;
+          this.tableData = response.data.ClassTables;
+          if (!this.tableData || this.tableData.length === 0) {
+            this.$message.error("查询课表失败！");
+            this.calendar.removeAllEvents();
+            return;
+          }
+          this.$message.success("查询课表成功");
           this.handleRenderTableData();
-          // console.log(this.teacherTableData);
-          this.error = null;
         })
         .catch((error) => {
-          this.error = error.message;
-          // this.teacherTableData = null;
+          console.log(error);
         });
     },
     validateSelection() {
       // 若开始节次或结束节次为空，不进行校验
-      if (!this.startClass || !this.endClass) {
+      if (!this.scheduleInfo.startClass || !this.scheduleInfo.endClass) {
         return;
       }
       // 检查开始节次是否大于结束节次
-      if (this.startClass > this.endClass) {
+      if (this.scheduleInfo.startClass > this.scheduleInfo.endClass) {
         this.$message({
           type: "error",
           message: "开始节次不得大于结束节次",
@@ -671,10 +699,10 @@ export default {
       } else {
         // 根据选择的节次找到对应的时间映射
         const startMapping = this.classTimeMapping.find(
-          (m) => m.class === this.startClass
+          (m) => m.class === this.scheduleInfo.startClass
         );
         const endMapping = this.classTimeMapping.find(
-          (m) => m.class === this.endClass
+          (m) => m.class === this.scheduleInfo.endClass
         );
 
         // 更新 curInfo 中的开始时间和结束时间
@@ -692,30 +720,31 @@ export default {
         }
       }
     },
-    handleClose(done) {
-      // var confirmStr = `之前${this.isModify === true ? '修改' : '填写'}的数据都会丢失，你确定关闭吗？`
-      // this.$confirm(confirmStr)
-      //   .then(_ => {
-      //     this.handleResetCourseInfo()
-      //     this.dialogVisible = false
-      //     if (this.isModify) {
-      //       this.$message(`已取消${this.isModify === true ? '修改' : '填写'}`)
-      //     }
-      //     this.isModify = false
-      //     done()
-      //   })
-      //   .catch(_ => { })
-
-      this.handleResetCourseInfo();
+    handleClose() {
+      this.resetForm();
       this.dialogVisible = false;
-    },
-    handleResetCourseInfo() {
-      this.scheduleInfo.id = "";
-      // this.scheduleInfo.startToEndValue = []
     },
     handleModifyFocusEvent() {
       this.isModify = true;
-      this.scheduleInfo.id = this.curInfo.event.title;
+      // console.log(this.curInfo);
+      const eventInfo = this.curInfo.event.extendedProps;
+      this.scheduleInfo.id = eventInfo.schedule_result_id.toString();
+      this.scheduleInfo.classroom = eventInfo.classroom_id;
+      this.scheduleInfo.startClass = eventInfo.time_slots[0].StartPeriod;
+      this.scheduleInfo.endClass =
+        eventInfo.time_slots[0].StartPeriod +
+        eventInfo.time_slots[0].Duration -
+        1;
+      this.scheduleInfo.selectedWeekDay = eventInfo.time_slots[0].Weekday;
+      if (eventInfo.time_slots[0].WeekNumbers) {
+        this.scheduleInfo.startWeekNumber =
+          eventInfo.time_slots[0].WeekNumbers[0];
+        this.scheduleInfo.endWeekNumber =
+          eventInfo.time_slots[0].WeekNumbers[
+            eventInfo.time_slots[0].WeekNumbers.length - 1
+          ];
+      }
+
       this.dialogVisible = true;
     },
     handleDeleteFocusEvent() {
@@ -731,6 +760,7 @@ export default {
       this.popoverVisible = false;
     },
     handleClickEvent(info) {
+      // console.log(info);
       this.curInfo = info;
       const target = info.jsEvent.target;
       if (target) {
@@ -749,114 +779,132 @@ export default {
       // 设置标志位
       this.isOpeningPopover = true;
     },
-    handleCreateEvent() {
+    handleSubmitSchedule() {
       this.$refs.formRef.validate((valid) => {
         if (valid) {
           //验证通过，执行正常逻辑
           const formData = {
-            schedule_id: Number(this.scheduleInfo.id),
             classroom_id: this.scheduleInfo.classroom,
             time_slots: [
               {
                 week_numbers: Array.from(
-                  { length: this.endWeekNumber - this.startWeekNumber + 1 },
-                  (_, index) => index + this.startWeekNumber
+                  {
+                    length:
+                      this.scheduleInfo.endWeekNumber -
+                      this.scheduleInfo.startWeekNumber +
+                      1,
+                  },
+                  (_, index) => index + this.scheduleInfo.startWeekNumber
                 ),
-                weekday: this.selectedWeekDay,
-                start_period: this.startClass,
-                duration: this.endClass - this.startClass + 1,
+                weekday: this.scheduleInfo.selectedWeekDay,
+                start_period: this.scheduleInfo.startClass,
+                duration:
+                  this.scheduleInfo.endClass - this.scheduleInfo.startClass + 1,
               },
             ],
           };
-          axios
-            .post(this.getInsertScheduleResultUrl, formData)
-            .then((res) => {
-              console.log(res);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
 
-          // if (!this.isModify) {
-          //   const newEvent = {
-          //     title: this.scheduleInfo.id,
-          //     start: this.curInfo.start,
-          //     end: this.curInfo.end,
-          //   };
-          //   if (this.calendar.addEvent(newEvent)) {
-          //     this.dialogVisible = false;
-          //     this.$message({
-          //       type: "success",
-          //       message: "添加成功",
-          //     });
-          //   } else {
-          //     this.$message({
-          //       type: "error",
-          //       message: "添加失败",
-          //     });
-          //   }
-          // } else {
-          //   // console.log(this.curInfo.event)
-          //   this.curInfo.event.setProp("title", this.scheduleInfo.id);
-          //   this.handleResetCourseInfo();
-          //   this.isModify = false;
-          //   this.$message({
-          //     message: "修改成功",
-          //     type: "success",
-          //   });
-          // }
-          // this.dialogVisible = false;
+          if (!this.isModify) {
+            formData.schedule_id = Number(this.scheduleInfo.id);
+            axios
+              .post(this.getInsertScheduleResultUrl, formData)
+              .then((res) => {
+                // console.log(res);
+                if (res.data.status === 200) {
+                  this.$message.success("排课成功");
+                  this.dialogVisible = false;
+                } else {
+                  this.$message.error("排课失败");
+                  this.dialogVisible = false;
+                }
+              })
+              .catch((err) => {
+                const errStr = err.response.data.message
+                  ? err.response.data.message
+                  : "";
+                // console.log(errStr);
+                this.$msgbox({
+                  title: "排课失败",
+                  message: errStr,
+                  type: "error",
+                  confirmButtonText: "确定",
+                })
+                  .then(() => {})
+                  .catch(() => {});
+              });
+
+            // if (!this.isModify) {
+            //   const newEvent = {
+            //     title: this.scheduleInfo.id,
+            //     start: this.curInfo.start,
+            //     end: this.curInfo.end,
+            //   };
+            //   if (this.calendar.addEvent(newEvent)) {
+            //     this.dialogVisible = false;
+            //     this.$message({
+            //       type: "success",
+            //       message: "添加成功",
+            //     });
+            //   } else {
+            //     this.$message({
+            //       type: "error",
+            //       message: "添加失败",
+            //     });
+            //   }
+            // } else {
+            //   // console.log(this.curInfo.event)
+            //   this.curInfo.event.setProp("title", this.scheduleInfo.id);
+            //   this.handleResetCourseInfo();
+            //   this.isModify = false;
+            //   this.$message({
+            //     message: "修改成功",
+            //     type: "success",
+            //   });
+            // }
+            // this.dialogVisible = false;
+          } else {
+            formData.schedule_result_id = Number(this.scheduleInfo.id);
+            axios
+              .put(this.getModifyScheduleResultUrl, formData)
+              .then((res) => {
+                // console.log(res);
+                if (res.data.status === 200) {
+                  this.$message.success("修改排课结果成功");
+                  this.calendar.removeAllEvents();
+                  this.fetchTable();
+                } else {
+                  this.$message.error("排课失败");
+                  this.dialogVisible = false;
+                }
+              })
+              .catch((err) => {
+                // console.log(err);
+                const errStr = err.response.data.message
+                  ? err.response.data.message
+                  : "";
+                // console.log(errStr);
+                this.$msgbox({
+                  title: "排课失败",
+                  message: errStr,
+                  type: "error",
+                  confirmButtonText: "确定",
+                })
+                  .then(() => {})
+                  .catch(() => {});
+              });
+          }
         } else {
           //验证失败
           return false;
         }
       });
     },
-    handleTimeDivision(event) {
-      var start = event.start;
-      var end = event.end;
-      if (!start) {
-        // Todo:下拉延长日程时，start为空
-        return;
-      }
-      // console.log(start.getHours(), start.getMinutes());
-      var range = {
-        start: new Time(start.getHours(), start.getMinutes()),
-        end: new Time(end.getHours(), end.getMinutes()),
-      };
-      for (var i = 0; i < this.timeDivision.length; i++) {
-        if (
-          range.start.compareTo(this.timeDivision[i].start) >= 0 &&
-          range.start.compareTo(this.timeDivision[i].end) <= 0
-        ) {
-          // console.log(range.start.subtract(this.timeDivision[i].start), this.timeDivision[i].end.subtract(range.start))
-          var j =
-            range.start.subtract(this.timeDivision[i].start) >=
-            this.timeDivision[i].end.subtract(range.start)
-              ? i + 1
-              : i;
-          if (j >= this.timeDivision.length) {
-            return;
-          }
-          // console.log(i, j)
-          start.setHours(this.timeDivision[j].start.hour);
-          end.setHours(this.timeDivision[j].end.hour);
-          start.setMinutes(this.timeDivision[j].start.minute);
-          end.setMinutes(this.timeDivision[j].end.minute);
-          event.setStart(start);
-          event.setEnd(end);
-          return;
-        }
-      }
-    },
-    isCourseInfoEmpty() {},
     resetForm() {
       this.$refs.formRef.resetFields();
     },
     handleSelect(info) {
       this.dialogVisible = true;
       this.curInfo = info;
-      console.log(info);
       info.view.calendar.unselect();
 
       const startHour = info.start.getHours();
@@ -880,8 +928,8 @@ export default {
         }
       }
 
-      this.startClass = startClass;
-      this.endClass = endClass;
+      this.scheduleInfo.startClass = startClass;
+      this.scheduleInfo.endClass = endClass;
     },
     calculateDateRange() {
       // 计算有效日期范围
@@ -900,10 +948,78 @@ export default {
       return `第 ${weekNumber} 周`;
     },
     handleEventDrop(info) {
+      info.revert();
       // info 包含了事件移动前后的信息
       var event = info.event;
-      // 后端传过来的节数整齐则进入函数
-      // this.handleTimeDivision(event);
+      console.log(event);
+      const start = event.start;
+      const end = event.end;
+      const startDay = start.getDay();
+      const startHour = start.getHours();
+      const endDay = end.getDay();
+      const endHour = end.getHours();
+      let startClass = null;
+      let endClass = null;
+      // 查找开始节次
+      for (const mapping of this.classTimeMapping) {
+        if (startHour === mapping.start.hour) {
+          startClass = mapping.class;
+          break;
+        }
+      }
+      // 查找结束节次
+      for (const mapping of this.classTimeMapping) {
+        if (endHour === mapping.end.hour) {
+          endClass = mapping.class;
+          break;
+        }
+      }
+      // 计算持续节次数
+      let duration = null;
+      if (startClass !== null && endClass !== null) {
+        duration = endClass - startClass + 1;
+      }
+      const eventInfo = event.extendedProps;
+      const formData = {
+        schedule_result_id: eventInfo.schedule_result_id,
+        classroom_id: eventInfo.classroom_id,
+        time_slots: [
+          {
+            week_numbers: eventInfo.time_slots[0].WeekNumbers,
+            weekday: startDay,
+            start_period: startClass,
+            duration: duration,
+          },
+        ],
+      };
+      axios
+        .put(this.getModifyScheduleResultUrl, formData)
+        .then((res) => {
+          // console.log(res);
+          if (res.data.status === 200) {
+            this.$message.success("修改排课结果成功");
+            this.calendar.removeAllEvents();
+            this.fetchTable();
+          } else {
+            this.$message.error("排课失败");
+            this.dialogVisible = false;
+          }
+        })
+        .catch((err) => {
+          // console.log(err);
+          const errStr = err.response.data.message
+            ? err.response.data.message
+            : "";
+          // console.log(errStr);
+          this.$msgbox({
+            title: "排课失败",
+            message: errStr,
+            type: "error",
+            confirmButtonText: "确定",
+          })
+            .then(() => {})
+            .catch(() => {});
+        });
     },
     queryCourseNameSearchAsync(queryString, cb) {
       // 请求数据
@@ -983,16 +1099,17 @@ export default {
         .then((res) => {
           if (res.status === 200) {
             names = res.data.data.Schedules;
+            // console.log(this.schedule.id);
             names = this.schedule.id
-              ? names.filter((n) => n.tearch_id === this.schedule.id)
+              ? names.filter((n) => n.teacher_id === this.schedule.id)
               : names;
             names = queryString
-              ? names.filter((n) => n.id.includes(queryString))
+              ? names.filter((n) => n.id.toString().includes(queryString))
               : names;
             let results = queryString
               ? names.filter((n) => [n.id, n.course_name])
               : names;
-            console.log(results);
+            // console.log(results);
             clearTimeout(this.timeout);
             this.timeout = setTimeout(() => {
               cb(results);

@@ -30,22 +30,23 @@
 
       <!-- 显示当前选中的值 -->
       <div class="selector-label">
-        当前选中的值：{{ selectedValue || '未选择（显示所有教师平均数据）' }}
+        当前选中的值：{{ selectedValue || "未选择（显示所有教师平均数据）" }}
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import * as echarts from 'echarts';
-import axios from 'axios'; // 引入 axios
+import * as echarts from "echarts";
+import axios from "axios"; // 引入 axios
+import { mapState } from "vuex";
 
 export default {
-  name: 'BarChart',
+  name: "BarChart",
   data() {
     return {
       // 选中的值
-      selectedValue: '',
+      selectedValue: "",
       // 下拉框选项
       options: [],
       // ECharts 实例
@@ -56,6 +57,10 @@ export default {
     this.initChart();
     this.fetchTeachers(); // 获取老师信息
     this.fetchAverageData(); // 初始加载所有教师的平均数据
+    console.log(this.analysis);
+  },
+  computed: {
+    ...mapState(["analysis"]),
   },
   methods: {
     initChart() {
@@ -65,18 +70,20 @@ export default {
       // 初始图表配置
       const option = {
         title: {
-          text: '教师排课量'
+          text: "教师排课量",
         },
         tooltip: {},
         xAxis: {
-          data: ['日平均', '周一', '周二', '周三', '周四', '周五']
+          data: ["日平均", "周一", "周二", "周三", "周四", "周五"],
         },
         yAxis: {},
-        series: [{
-          name: '排课量',
-          type: 'bar',
-          data: [] // 初始数据为空
-        }]
+        series: [
+          {
+            name: "排课量",
+            type: "bar",
+            data: [], // 初始数据为空
+          },
+        ],
       };
 
       // 使用刚指定的配置项和数据显示图表。
@@ -84,38 +91,43 @@ export default {
     },
     fetchTeachers() {
       // 从后端获取老师信息
-      axios.get('http://127.0.0.1:4523/m1/5962874-5651024-default/teacher/queryall') // 替换为你的后端 API 地址
-        .then(response => {
-          this.options = response.data.data.map(teacher => ({
+      axios
+        .get(
+          "http://127.0.0.1:4523/m1/5962874-5651024-default/teacher/queryall"
+        ) // 替换为你的后端 API 地址
+        .then((response) => {
+          this.options = response.data.data.map((teacher) => ({
             value: teacher.ID,
-            label: teacher.Name
+            label: teacher.Name,
           }));
         })
-        .catch(error => {
-          console.error('获取老师信息失败:', error);
+        .catch((error) => {
+          console.error("获取老师信息失败:", error);
         });
     },
     fetchAverageData() {
       // 获取所有教师的平均排课数据
-      axios.get('/api/average-schedule') // 替换为你的后端 API 地址
-        .then(response => {
+      axios
+        .get("/api/average-schedule") // 替换为你的后端 API 地址
+        .then((response) => {
           const averageData = response.data; // 假设返回的数据格式为 [5, 20, 36, 10, 10, 10]
           this.updateChart(averageData);
         })
-        .catch(error => {
-          console.error('获取平均排课数据失败:', error);
+        .catch((error) => {
+          console.error("获取平均排课数据失败:", error);
         });
     },
     handleChange(selectedValue) {
       if (selectedValue) {
         // 根据选择的老师 ID 获取柱状图数据
-        axios.get(`/api/teacher-schedule/${selectedValue}`) // 替换为你的后端 API 地址
-          .then(response => {
+        axios
+          .get(`/api/teacher-schedule/${selectedValue}`) // 替换为你的后端 API 地址
+          .then((response) => {
             const chartData = response.data; // 假设返回的数据格式为 [5, 20, 36, 10, 10, 10]
             this.updateChart(chartData);
           })
-          .catch(error => {
-            console.error('获取排课数据失败:', error);
+          .catch((error) => {
+            console.error("获取排课数据失败:", error);
           });
       } else {
         // 未选择时，显示所有教师的平均数据
@@ -125,14 +137,16 @@ export default {
     updateChart(data) {
       // 更新图表数据
       const option = {
-        series: [{
-          data: data
-        }]
+        series: [
+          {
+            data: data,
+          },
+        ],
       };
       this.chart.setOption(option);
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>

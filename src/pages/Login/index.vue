@@ -76,7 +76,7 @@ export default {
           // this.handleAxios()
           this.$message("登录成功");
           // 设置身份
-          this.$store.commit("SetIdentity", 1);
+          this.$store.commit("SetIdentity", 0);
           this.$store.commit("ChangeAuthState");
           this.$router.push("/home");
         } else {

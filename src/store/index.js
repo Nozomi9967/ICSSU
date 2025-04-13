@@ -15,12 +15,16 @@ const mutations = {
   },
   SetIdentity(state, iden) {
     state.identity = iden
+  },
+  SetAnalysis(state, val) {
+    state.analysis = val
   }
 }
 
 const state = {
   isAuth: false,
   identity: null,//0:管理员,1:教师,2:学生
+  analysis: null
 }
 
 export default new Vuex.Store({

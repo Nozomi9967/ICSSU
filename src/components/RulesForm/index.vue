@@ -246,25 +246,29 @@ export default {
     submitForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
+          const loading = this.$loading({
+            lock: true,
+            text: "正在自动排课中，请耐心等待",
+            spinner: "el-icon-loading",
+            background: "rgba(0,0,0,0.7)",
+          });
           // 封装请求数据
           const requestData = {
             schedule_ids: [],
             rules: this.rules,
           };
-
-          axios({
-            method: "get",
-            url: this.getAutoScheduleUrl,
-            data: requestData,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          })
+          axios
+            .post(this.getAutoScheduleUrl, requestData)
             .then((res) => {
               console.log(res);
+              this.$store.commit("SetAnalysis", res.data.data.analysis);
+              loading.close();
+              this.$message.success("自动排课成功");
             })
             .catch((err) => {
               console.log(err);
+              loading.close();
+              this.$message.error("自动排课失败");
             });
         } else {
           console.log("表单验证失败");

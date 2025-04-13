@@ -39,6 +39,17 @@
         </div>
         <div class="section-with-title">
           <div class="section-title">优先排课</div>
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入排课任务 ID 进行搜索"
+            style="margin-bottom: 10px"
+          >
+            <el-button
+              slot="append"
+              icon="el-icon-search"
+              @click="handleSearch"
+            ></el-button>
+          </el-input>
           <el-transfer
             :data="transferData"
             v-model="transferValue"
@@ -64,19 +75,26 @@ export default {
     getScheduleFileUploadUrl() {
       return `${this.serverUrl}${this.schedulePrefix}/create/file`;
     },
+    getAllSchedulesUrl() {
+      return `${this.serverUrl}${this.schedulePrefix}/queryall`;
+    },
+    getScheduleQueryUrl() {
+      return `${this.serverUrl}${this.schedulePrefix}/query`;
+    },
   },
   data() {
     return {
       serverUrl: SERVER_URL,
       schedulePrefix: SCHEDULE_PREFIX,
-      transferData: [
-        { key: 1, label: "选项 1" },
-        { key: 2, label: "选项 2" },
-        { key: 3, label: "选项 3" },
-        { key: 4, label: "选项 4" },
-      ],
+      transferData: [],
+      allTransferData: [], // 存储所有排课任务数据
       transferValue: [],
+      searchKeyword: "",
+      keyCounter: 0,
     };
+  },
+  mounted() {
+    this.fetchAllScheduleTasks();
   },
   methods: {
     handleBeforeUpload(file) {
@@ -134,6 +152,53 @@ export default {
           console.error("上传出错:", error);
           this.$message.error("上传过程中出现错误");
           loading.close();
+        });
+    },
+    fetchAllScheduleTasks() {
+      // 这里调用接口获取所有排课任务数据
+      // 示例：const response = await axios.get('your-api-url');
+      // this.allTransferData = response.data;
+      // this.transferData = this.allTransferData;
+      axios
+        .get(this.getAllSchedulesUrl)
+        .then((res) => {
+          console.log(res);
+          // 转换数据格式，将 id 作为 label，key 自增
+          this.allTransferData = res.data.data.Schedules.map((item) => ({
+            key: this.keyCounter++,
+            label: item.id.toString(), // 将 id 转换为字符串作为 label
+          }));
+
+          this.transferData = this.allTransferData;
+        })
+        .catch((error) => {
+          console.log(error);
+          this.$message.error("获取排课任务列表失败");
+        });
+    },
+    handleSearch() {
+      if (this.searchKeyword === "") {
+        this.transferData = this.allTransferData;
+        return;
+      }
+      // 这里调用接口根据 ID 搜索排课任务数据
+      // 示例：const response = await axios.get(`your-search-api-url?id=${this.searchKeyword}`);
+      // this.transferData = response.data;
+      const url = this.getScheduleQueryUrl + "/" + this.searchKeyword;
+      axios
+        .get(url)
+        .then((res) => {
+          console.log(res);
+          this.keyCounter = 0;
+          this.transferData = [
+            {
+              key: this.keyCounter,
+              label: res.data.data.id.toString(),
+            },
+          ];
+        })
+        .catch((error) => {
+          console.log(error);
         });
     },
   },
