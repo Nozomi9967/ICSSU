@@ -40,6 +40,8 @@
           >
             <el-option label="教师" :value="1"></el-option>
             <el-option label="教室" :value="2"></el-option>
+            <el-option label="班级" :value="3"></el-option>
+            <!-- 新增的班级选项 -->
           </el-select>
           <el-button slot="append" icon="el-icon-search"></el-button>
         </el-autocomplete>
@@ -298,6 +300,7 @@ import {
   COURSE_PREFIX,
   TEACHER_PREFIX,
   CLASSROOM_PREFIX,
+  CLASS_PREFIX,
 } from "@config";
 import axios from "axios";
 import FullCalendar from "@fullcalendar/vue";
@@ -316,6 +319,7 @@ export default {
       coursePrefix: COURSE_PREFIX,
       teacherPrefix: TEACHER_PREFIX,
       classroomPrefix: CLASSROOM_PREFIX,
+      classPrefix: CLASS_PREFIX,
       startDate: new Date(2025, 2, 3),
       calendarOptions: {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -430,11 +434,13 @@ export default {
           end: { hour: 16, minute: 0 },
         },
       ],
-      selectedDimen: 1, //维度：教师/教室
+      selectedDimen: null, //维度：教师/教室
       searchKeyWord: "", //搜索关键字
       schedule: {
-        id: "0558",
-        semester: "2024-2025-1",
+        // id: "0558",
+        // semester: "2024-2025-1",
+        id: null,
+        semester: null,
       },
       isModify: false,
       isOpeningPopover: false,
@@ -505,12 +511,17 @@ export default {
           return "请输入教师名";
         case 2:
           return "请输入教室";
+        case 3: // 新增的 class 维度
+          return "请输入班级";
         default:
           return "请输入";
       }
     },
     getCourseNameSearchUrl() {
       return `${this.serverUrl}${this.coursePrefix}/search`;
+    },
+    getClassSearchUrl() {
+      return `${this.serverUrl}${this.classPrefix}/search`;
     },
     getTeacherSearchUrl() {
       return `${this.serverUrl}${this.teacherPrefix}/search`;
@@ -596,8 +607,11 @@ export default {
     getFetchSuggestions(queryString, cb) {
       if (this.selectedDimen === 1) {
         return this.queryTeacherSearchAsync(queryString, cb);
-      } else {
+      } else if (this.selectedDimen === 2) {
         return this.queryClassroomSearchAsync(queryString, cb);
+      } else if (this.selectedDimen === 3) {
+        // 新增的 class 维度
+        return this.queryClassSearchAsync(queryString, cb);
       }
     },
     handleDimenItemSelect(item) {
@@ -648,6 +662,7 @@ export default {
       });
     },
     fetchTable() {
+      this.calendar.removeAllEvents();
       let params;
       let url;
       switch (this.selectedDimen) {
@@ -664,6 +679,13 @@ export default {
             semester: this.schedule.semester,
           };
           url = this.getClassroomTableUrl;
+          break;
+        case 3: // 新增的 class 维度
+          params = {
+            class_id: this.schedule.id, // 假设接口参数是 class_id，根据实际情况调整
+            semester: this.schedule.semester,
+          };
+          url = "http://localhost:8080/table/class"; // 假设获取班级课表的接口 URL，根据实际情况调整
           break;
         default:
           console.log("switch出错");
@@ -1019,6 +1041,30 @@ export default {
           })
             .then(() => {})
             .catch(() => {});
+        });
+    },
+    queryClassSearchAsync(queryString, cb) {
+      // 请求数据
+      const queryParms = {
+        search_str: queryString,
+      };
+      var names;
+      axios
+        .get(this.getClassSearchUrl, {
+          params: queryParms,
+        })
+        .then((res) => {
+          names = res.data.data.classes; // 假设接口返回的班级数据在 classes 字段下，根据实际情况调整
+          var results = queryString ? names.filter((n) => n.id) : names;
+
+          // console.log(results);
+          clearTimeout(this.timeout);
+          this.timeout = setTimeout(() => {
+            cb(results);
+          }, 3000 * Math.random());
+        })
+        .catch((err) => {
+          console.log(err);
         });
     },
     queryCourseNameSearchAsync(queryString, cb) {

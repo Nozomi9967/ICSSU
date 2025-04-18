@@ -21,6 +21,13 @@
             autocomplete="off"
           ></el-input>
         </el-form-item>
+        <el-form-item label="身份" prop="identity">
+          <el-select v-model="loginForm.identity">
+            <el-option label="教师" value="teacher"></el-option>
+            <el-option label="学生" value="student"></el-option>
+            <el-option label="管理员" value="admin"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="submitForm('loginForm')"
             >登录</el-button
@@ -31,7 +38,6 @@
     </el-card>
   </div>
 </template>
-
 <script>
 import axios from "axios";
 export default {
@@ -41,22 +47,41 @@ export default {
       loginForm: {
         username: "",
         password: "",
+        identity: "", // 新增身份属性并初始化
       },
       rules: {
         username: [{ required: true, message: "请输入账号", trigger: "blur" }],
         password: [{ required: true, message: "请输入密码", trigger: "blur" }],
+        identity: [
+          { required: true, message: "请选择身份", trigger: "change" },
+        ], // 新增身份校验规则
       },
     };
   },
   methods: {
     async handleAxios() {
       await axios
-        .post("http://localhost:8080/login", this.loginForm)
+        .post("http://localhost:8080/user/login", this.loginForm)
         .then((response) => {
           const result = response.data;
           console.log(result);
-          if (result.code == 200) {
+          if (result.status == 200) {
             console.log("请求成功");
+            this.$store.commit("ChangeAuthState");
+            let iden;
+            switch (this.loginForm.identity) {
+              case "admin":
+                iden = 0;
+                break;
+              case "teacher":
+                iden = 1;
+                break;
+              case "student":
+                iden = 2;
+                break;
+            }
+            this.$store.commit("SetIdentity", iden);
+            this.$store.commit("SetUserName", this.loginForm.username);
             this.$message("登录成功");
             this.$router.push("/home");
           } else {
@@ -73,12 +98,7 @@ export default {
       this.$refs[formName].validate((valid) => {
         if (valid) {
           this.$message("提交成功!登陆中---");
-          // this.handleAxios()
-          this.$message("登录成功");
-          // 设置身份
-          this.$store.commit("SetIdentity", 0);
-          this.$store.commit("ChangeAuthState");
-          this.$router.push("/home");
+          this.handleAxios(); // 恢复调用
         } else {
           console.log("验证失败!");
           this.$message("提交失败！");

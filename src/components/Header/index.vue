@@ -29,12 +29,10 @@ import { mapState } from "vuex";
 export default {
   name: "Header",
   data() {
-    return {
-      username: "用户名",
-    };
+    return {};
   },
   computed: {
-    ...mapState(["isAuth"]),
+    ...mapState(["isAuth", "username"]),
   },
   methods: {
     open() {

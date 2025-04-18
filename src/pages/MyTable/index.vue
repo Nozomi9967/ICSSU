@@ -1,5 +1,13 @@
 <template>
-  <div style="position: relative; display: flex">
+  <div
+    style="
+      position: relative;
+      display: flex;
+      margin-top: 50px;
+      padding-left: 100px;
+      padding-right: 100px;
+    "
+  >
     <!-- 节次显示区域 -->
     <div style="width: 100px; margin-top: 180px">
       <div
@@ -19,13 +27,23 @@
     <div style="flex: 1; position: relative">
       <!-- 条件选择区域 -->
       <!-- 这段可以用来实现教师搜索查看自己的教学班级，然后查看教学班级的课表 -->
-      <!-- <div style="margin-top: 15px; margin-bottom: 30px">
+      <div style="margin-top: 15px; margin-bottom: 30px">
+        <span style="margin-left: 30px; margin-right: 10px">学期</span>
+        <el-select v-model="schedule.semester" placeholder="请选择学期">
+          <el-option
+            v-for="item in semesterOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.label"
+          >
+          </el-option>
+        </el-select>
         <el-autocomplete
           style="width: 600px"
           v-model="schedule.id"
           :fetch-suggestions="getFetchSuggestions"
-          placeholder="请输入授课教师"
-          @select="handleSelect"
+          placeholder="请绑定班级编号"
+          @select="handleDimenItemSelect"
         >
           <template slot-scope="{ item }">
             <div class="autocomplete-item">
@@ -33,9 +51,12 @@
               <span class="name">{{ item.name }}</span>
             </div>
           </template>
-          <el-button slot="append" icon="el-icon-search"></el-button>
         </el-autocomplete>
-      </div> -->
+
+        <el-button type="primary" plain @click="handleSearchOut"
+          >查询课表</el-button
+        >
+      </div>
       <!-- 日历区域 -->
       <FullCalendar :options="calendarOptions" ref="calendarRef" />
       <!-- 课程dialog区域 -->
@@ -46,7 +67,73 @@
         width="60%"
         :before-close="handleClose"
       >
-        <!-- dialog放课程详细信息，可以用elemui的Descriptions 描述列表 -->
+        <el-descriptions border>
+          <el-descriptions-item label="学期">
+            {{ selectedEvent.extendedProps?.semester || "暂无学期信息" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="排课ID">
+            {{ selectedEvent.extendedProps?.schedule_id || "暂无排课ID信息" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="课程ID">
+            {{ selectedEvent.extendedProps?.course_id || "暂无课程ID信息" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="课程名称">
+            {{ selectedEvent.extendedProps?.course_name || "暂无课程名称信息" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="教师ID">
+            {{ selectedEvent.extendedProps?.teacher_id || "暂无教师ID信息" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="教师姓名">
+            {{
+              selectedEvent.extendedProps?.teacher_name || "暂无教师姓名信息"
+            }}
+          </el-descriptions-item>
+          <el-descriptions-item label="教室ID">
+            {{ selectedEvent.extendedProps?.classroom_id || "暂无教室ID信息" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="班级ID">
+            {{
+              (selectedEvent.extendedProps?.class_ids || []).join(", ") ||
+              "暂无班级ID信息"
+            }}
+          </el-descriptions-item>
+          <el-descriptions-item label="班级名称">
+            {{
+              (selectedEvent.extendedProps?.class_name || []).join(", ") ||
+              "暂无班级名称信息"
+            }}
+          </el-descriptions-item>
+          <!-- 周数 -->
+          <el-descriptions-item label="教学周数">
+            {{
+              selectedEvent?.extendedProps?.time_slots?.[0]?.WeekNumbers?.join(
+                "、"
+              ) || "未设置周数"
+            }}
+          </el-descriptions-item>
+
+          <!-- 星期 -->
+          <el-descriptions-item label="上课星期">
+            {{
+              selectedEvent?.extendedProps?.time_slots?.[0]?.Weekday ||
+              "未设置星期"
+            }}
+          </el-descriptions-item>
+
+          <!-- 节次 -->
+          <el-descriptions-item label="开始节次">
+            第{{
+              selectedEvent?.extendedProps?.time_slots?.[0]?.StartPeriod || "?"
+            }}节课
+          </el-descriptions-item>
+
+          <!-- 持续时间 -->
+          <el-descriptions-item label="持续时长">
+            {{
+              selectedEvent?.extendedProps?.time_slots?.[0]?.Duration || "?"
+            }}个课时
+          </el-descriptions-item>
+        </el-descriptions>
       </el-dialog>
       <!-- 点击日程后的popover弹出框区域 -->
       <el-popover
@@ -63,12 +150,24 @@
       >
         <div class="popover-content">
           <!-- 下面的这个div放点击课程后显示的关键信息 -->
-          <div class="popover-text">{{ selectedEvent.location }}</div>
+          <div class="popover-text">
+            教室编号：{{
+              (selectedEvent.extendedProps &&
+                selectedEvent.extendedProps.classroom_id) ||
+              ""
+            }}
+            周数：{{
+              (selectedEvent.extendedProps &&
+                selectedEvent.extendedProps.time_slots[0].WeekNumbers.join(
+                  ","
+                )) ||
+              ""
+            }}
+          </div>
           <div class="button-group">
-            <el-button type="text" @click="1">编辑</el-button>
-            <!-- 编辑换成查看，普通用户不能编辑 -->
-            <el-button type="text" @click="1">删除</el-button>
-            <!-- 删除按钮和事件也删除 -->
+            <el-button type="text" @click="handleDetail"
+              >查看详细信息</el-button
+            >
           </div>
         </div>
       </el-popover>
@@ -89,6 +188,7 @@ import {
   TEACHER_PREFIX,
   CLASSROOM_PREFIX,
 } from "@config";
+import { mapState } from "vuex";
 import axios from "axios";
 import FullCalendar from "@fullcalendar/vue";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -262,10 +362,23 @@ export default {
         { value: 7, label: "星期日" },
       ], // 星期几选项数组
       selectedWeekDay: null, // 选中的星期几
+      semesterOptions: [
+        {
+          value: 1,
+          label: "2024-2025-1",
+        },
+        {
+          value: 2,
+          label: "2024-2025-2",
+        },
+      ],
     };
   },
   mounted() {
     // 初始化周数选项
+    if (this.identity == 1) {
+      this.schedule.id = this.username;
+    }
     this.calendar = this.$refs.calendarRef.getApi();
     this.$nextTick(() => {
       // 使用 CSS 选择器隐藏时间标签
@@ -280,20 +393,14 @@ export default {
     });
   },
   computed: {
-    getCourseNameSearchUrl() {
-      return `${this.serverUrl}${this.coursePrefix}/search`;
-    },
     getTeacherSearchUrl() {
       return `${this.serverUrl}${this.teacherPrefix}/search`;
     },
-    getAllSchedulesUrl() {
-      return "http://localhost:8080/schedule/queryall";
-    },
-    getClassroomSearchUrl() {
-      return `${this.serverUrl}${this.classroomPrefix}/search`;
-    },
     getTeacherTableUrl() {
       return "http://localhost:8080/table/teacher";
+    },
+    getClassTableUrl() {
+      return "http://localhost:8080/table/class";
     },
     getClassroomTableUrl() {
       return "http://localhost:8080/table/classroom";
@@ -301,6 +408,10 @@ export default {
     getInsertScheduleResultUrl() {
       return "http://localhost:8080/table/create";
     },
+    getSearchClassUrl() {
+      return "http://localhost:8080/class/search";
+    },
+    ...mapState(["username", "identity"]),
   },
   directives: {
     clickOutside: {
@@ -326,22 +437,63 @@ export default {
     },
   },
   methods: {
+    getFetchSuggestions(queryString, cb) {
+      const url = `${this.getSearchClassUrl}?search_str=${
+        queryString ? queryString : ""
+      }`;
+      axios
+        .get(url)
+        .then((response) => {
+          // console.log(response);
+          // 假设接口返回的数据格式为 { data: [] }，实际情况可能不同，需根据真实接口返回调整
+          const suggestions = response.data.data.classes.map((item) => ({
+            id: item.id,
+            name: item.name,
+          }));
+          cb(suggestions);
+        })
+        .catch((error) => {
+          console.error("获取建议数据失败", error);
+          cb([]);
+        });
+    },
+    // 新增方法：处理选择建议项的操作
+    handleDimenItemSelect(item) {
+      this.schedule.id = item.id;
+      console.log(this.schedule);
+    },
+    handleDetail() {
+      this.dialogVisible = true;
+    },
+    handleSearchOut() {
+      if (this.identity == 1) {
+        if (!this.schedule.semester) {
+          this.$message.error("请选择学期！！！");
+          return;
+        }
+      } else {
+        if (!this.schedule.semester || !this.schedule.id) {
+          this.$message.error("请绑定教学班级或选择学期！！！");
+          return;
+        }
+      }
+      this.fetchTable();
+    },
     handleRenderTableData() {
+      console.log("##");
       // 获取今年 3 月 3 日的日期对象
       const startDate = new Date(new Date().getFullYear(), 2, 3);
       // 这里是把获得的排课数据，渲染到calendar组件上
-      this.teacherTableData.forEach((item) => {
+      this.tableData.forEach((item) => {
         const weekNums = item.time_slots[0].WeekNumbers;
         const weekDay = item.time_slots[0].Weekday;
         const startPeriod = item.time_slots[0].StartPeriod;
         const duration = item.time_slots[0].Duration;
-        console.log(weekNums, weekDay, startPeriod, duration);
 
         // 遍历每个周数
         weekNums.forEach((weekNum) => {
           // 计算课程所在的日期
           const daysOffset = (weekNum - 1) * 7 + (weekDay - 1);
-          console.log(daysOffset, "***");
           const courseDate = new Date(startDate.getTime());
           courseDate.setDate(courseDate.getDate() + daysOffset);
 
@@ -358,6 +510,7 @@ export default {
             title: item.course_name,
             start: startTime,
             end: endTime,
+            ...item,
           };
 
           // if (this.calendar.addEvent(newEvent)) {
@@ -376,7 +529,7 @@ export default {
       // 获取排课数据的函数
       let params;
       let url;
-      switch (this.selectedDimen) {
+      switch (this.identity) {
         case 1:
           params = {
             teacher_id: this.schedule.id,
@@ -386,27 +539,31 @@ export default {
           break;
         case 2:
           params = {
-            classroom_id: this.schedule.id,
+            class_id: this.schedule.id,
             semester: this.schedule.semester,
           };
-          url = this.getClassroomTableUrl;
+          url = this.getClassTableUrl;
           break;
-        default:
-          console.log("switch出错");
-          return;
       }
 
       axios
         .get(url, { params })
         .then((response) => {
-          this.teacherTableData = response.data.ClassTables;
+          console.log(response);
+          this.tableData = response.data.ClassTables;
+          if (!this.tableData || this.tableData.length === 0) {
+            this.$message.error("查询课表失败！");
+            this.calendar.removeAllEvents();
+            return;
+          }
           this.handleRenderTableData();
-          // console.log(this.teacherTableData);
+
+          this.$message.success("查询课表成功");
           this.error = null;
         })
         .catch((error) => {
           this.error = error.message;
-          // this.teacherTableData = null;
+          // this.tableData = null;
         });
     },
     handleClose(done) {
@@ -431,71 +588,9 @@ export default {
       }
       this.popoverVisible = true;
       this.selectedEvent = info.event;
+      console.log(this.selectedEvent.extendedProps);
       // 设置标志位
       this.isOpeningPopover = true;
-    },
-    handleCreateEvent() {
-      this.$refs.formRef.validate((valid) => {
-        if (valid) {
-          //验证通过，执行正常逻辑
-          const formData = {
-            schedule_id: Number(this.scheduleInfo.id),
-            classroom_id: this.scheduleInfo.classroom,
-            time_slots: [
-              {
-                week_numbers: Array.from(
-                  { length: this.endWeekNumber - this.startWeekNumber + 1 },
-                  (_, index) => index + this.startWeekNumber
-                ),
-                weekday: this.selectedWeekDay,
-                start_period: this.startClass,
-                duration: this.endClass - this.startClass + 1,
-              },
-            ],
-          };
-          axios
-            .post(this.getInsertScheduleResultUrl, formData)
-            .then((res) => {
-              console.log(res);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
-
-          // if (!this.isModify) {
-          //   const newEvent = {
-          //     title: this.scheduleInfo.id,
-          //     start: this.curInfo.start,
-          //     end: this.curInfo.end,
-          //   };
-          //   if (this.calendar.addEvent(newEvent)) {
-          //     this.dialogVisible = false;
-          //     this.$message({
-          //       type: "success",
-          //       message: "添加成功",
-          //     });
-          //   } else {
-          //     this.$message({
-          //       type: "error",
-          //       message: "添加失败",
-          //     });
-          //   }
-          // } else {
-          //   // console.log(this.curInfo.event)
-          //   this.curInfo.event.setProp("title", this.scheduleInfo.id);
-          //   this.handleResetCourseInfo();
-          //   this.isModify = false;
-          //   this.$message({
-          //     message: "修改成功",
-          //     type: "success",
-          //   });
-          // }
-          // this.dialogVisible = false;
-        } else {
-          //验证失败
-          return false;
-        }
-      });
     },
     calculateDateRange() {
       // 计算有效日期范围

@@ -5,7 +5,7 @@
       <div class="left-column">
         <div class="section-with-title">
           <div class="section-title">排课规则表单</div>
-          <RulesForm></RulesForm>
+          <RulesForm :list="transferValue"></RulesForm>
         </div>
       </div>
       <div class="divider"></div>
@@ -165,7 +165,7 @@ export default {
           console.log(res);
           // 转换数据格式，将 id 作为 label，key 自增
           this.allTransferData = res.data.data.Schedules.map((item) => ({
-            key: this.keyCounter++,
+            key: item.id,
             label: item.id.toString(), // 将 id 转换为字符串作为 label
           }));
 
@@ -247,15 +247,21 @@ export default {
   flex-direction: column;
   gap: 16px; /* 添加子元素间距 */
   margin-top: 30px;
+  align-items: center; /* 新增：让子元素水平居中 */
 }
 
 .section-with-title {
   border: 2px solid rgba(128, 128, 128, 0.489);
   border-radius: 8px;
   padding: 12px;
+  padding-top: 140px;
   position: relative;
   margin-bottom: 16px;
   flex-grow: 1; /* 允许数据转移区域扩展剩余空间 */
+  width: 80%; /* 新增：设置宽度，可根据需要调整 */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 新增：让子元素水平居中 */
 }
 
 .schedule-upload-section {

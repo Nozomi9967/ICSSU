@@ -529,7 +529,7 @@
           <!-- excel输入 -->
           <div class="excel-upload-section">
             <el-upload
-              class="upload-child"
+              class="upload-child upload"
               :auto-upload="false"
               drag
               :action="getClassFileUploadUrl"
@@ -1715,20 +1715,22 @@ export default {
 }
 
 .excel-upload-section {
-  margin-top: -30px;
-  height: 250px;
+  height: 300px;
   position: relative;
 }
 
+.upload {
+  margin-top: -70px;
+}
+
 .upload-child {
-  margin-top: -20px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .upload-button {
-  bottom: 10px;
+  bottom: 90px;
 }
 
 .buttons {

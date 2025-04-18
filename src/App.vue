@@ -23,7 +23,7 @@
               >
             </el-menu-item-group>
           </el-submenu>
-          <el-submenu index="2">
+          <el-submenu index="2" v-if="identity == admin">
             <template slot="title">
               <i class="el-icon-s-data"></i>
               <span>统计分析</span>
@@ -50,18 +50,19 @@
             <span>教室管理</span>
           </el-menu-item>
           <el-menu-item v-if="identity == admin" index="6" @click="toClass">
-            <i class="el-icon-reading"></i>
+            <i class="el-icon-s-management"></i>
             <span>班级管理</span>
           </el-menu-item>
 
-          <el-menu-item v-if="identity == admin" index="7" @click="toFlow">
-            <i class="el-icon-tickets"></i>
-            <span>流程审批</span>
-          </el-menu-item>
-
-          <el-menu-item v-if="identity !== admin" index="8" @click="toMyTable"
-            >我的课表</el-menu-item
+          <el-menu-item v-if="identity !== admin" index="7" @click="toMyTable">
+            <i class="el-icon-s-custom"></i>
+            我的课表</el-menu-item
           >
+
+          <!-- <el-menu-item v-if="identity == admin" index="8" @click="toFlow">
+              <i class="el-icon-tickets"></i>
+              <span>流程审批</span>
+            </el-menu-item> -->
         </el-menu>
       </el-aside>
       <el-main style="padding: 0">

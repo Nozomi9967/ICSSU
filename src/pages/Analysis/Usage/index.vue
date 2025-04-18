@@ -8,7 +8,6 @@
     <!-- ECharts 图表容器 -->
     <div class="chart-wrapper">
       <el-card class="chart-card">
-        <!-- 使用 ref 绑定 DOM 元素，用于初始化 ECharts -->
         <div ref="chart" class="chart"></div>
       </el-card>
     </div>
@@ -16,168 +15,209 @@
     <!-- 教室选择器 -->
     <div class="classroom-selector">
       <span class="selector-label">选择教室</span>
-      <!-- Element Plus 的级联选择器 -->
-      <el-cascader
-        placeholder="试试搜索"
-        :options="options" 
-        :props="{ multiple: false, checkStrictly: false}" 
-        filterable 
-        clearable 
-        v-model="selectedOptions"> 
-      </el-cascader>
+      <el-select
+        v-model="selectedClassroom"
+        filterable
+        clearable
+        placeholder="请选择或搜索教室"
+        @change="handleClassroomChange"
+      >
+        <el-option
+          v-for="item in classroomOptions"
+          :key="item.ID"
+          :label="`${item.Name} (${item.ID})`"
+          :value="item.ID"
+        />
+      </el-select>
     </div>
   </div>
 </template>
 
 <script>
-import * as echarts from 'echarts'; // 导入 ECharts
-import axios from 'axios'; // 导入 axios 用于发送 HTTP 请求
+import * as echarts from "echarts";
+import axios from "axios";
+// 以下是未来需要恢复Vuex时取消注释的部分
+import { mapState } from "vuex";
 
 export default {
-  name: 'PieChart', // 组件名称
+  name: "PieChart",
   data() {
     return {
-      options: [], // 级联选择器的选项数据
-      selectedOptions: [], // 选中的教室选项
+      // 当前直接使用的模拟数据（未来使用Vuex时可删除这部分）
+      // analysis: {
+      //   classroom_usage: {
+      //     HXGCZX201: 0.4222222222222222,
+      //     HXGCZX202: 0.25,
+      //     HXGCZX203: 0.65,
+      //     HXGCZX204: 0.5777777777777777,
+      //     HXGCZX205: 0.24444444444444444,
+      //     HXGCZX206: 0.40555555555555556,
+      //     // 更多教室数据...
+      //   },
+      //   teacher_workload: {
+      //     "0004": 72,
+      //     "0009": 108,
+      //     "0010": 64,
+      //     // 更多教师数据...
+      //   },
+      //   time_distribution: {
+      //     "周1-星期1-1节": 59,
+      //     "周1-星期1-3节": 59,
+      //     // 更多时间分布数据...
+      //   },
+      // },
+
+      classroomOptions: [], // 从API获取的教室选项
+      selectedClassroom: "", // 选中的教室ID
       chartData: [], // 图表数据
-      chartTitle: '总教室利用率', // 动态图表标题
+      chartTitle: "总教室利用率", // 动态图表标题
     };
   },
-  created() {
-    // 在组件创建时获取级联选择器的选项数据
-    this.fetchOptions();
+
+  // 以下是未来需要恢复Vuex时取消注释的部分
+  computed: {
+    ...mapState(["analysis"]),
   },
+
   mounted() {
-    // 在 DOM 挂载完成后，获取初始数据并渲染图表
-    this.fetchData([]).then(() => {
+    this.fetchClassroomOptions();
+    this.$nextTick(() => {
       this.renderChart();
-      // 监听窗口大小变化，重新渲染图表
-      window.addEventListener('resize', this.renderChart);
+      window.addEventListener("resize", this.renderChart);
     });
   },
+
   beforeDestroy() {
-    // 在组件销毁前移除窗口大小变化的监听器，避免内存泄漏
-    window.removeEventListener('resize', this.renderChart);
+    window.removeEventListener("resize", this.renderChart);
   },
+
+  // 以下是未来需要恢复Vuex时取消注释的部分
+  // watch: {
+  //   analysis: {
+  //     handler(newVal) {
+  //       if (newVal && newVal.classroom_usage) {
+  //         if (!this.selectedClassroom) {
+  //           this.showAverageUsage();
+  //         }
+  //       }
+  //     },
+  //     immediate: true,
+  //     deep: true
+  //   }
+  // },
+
   methods: {
-    // 获取级联选择器的选项数据
-    fetchOptions() {
-      axios.get('http://localhost:3000/api/options')
-        .then(response => {
-          this.options = response.data; // 将获取的数据赋值给 options
-        })
-        .catch(error => {
-          console.error('Error fetching options:', error); // 错误处理
-        });
-    },
-    // 获取图表数据
-    async fetchData(selectedClassrooms) {
+    async fetchClassroomOptions() {
       try {
-        let params = {};
-        if (selectedClassrooms.length > 0) {
-          // 如果有选中的教室，将教室 ID 转换为逗号分隔的字符串
-          const classroomIds = selectedClassrooms.map(classroom => classroom[1]).join(',');
-          params = { classrooms: classroomIds }; // 将教室 ID 作为请求参数
+        const response = await axios.get(
+          "http://localhost:8080/classroom/queryall"
+        );
+        if (response.data.status === 200) {
+          this.classroomOptions = response.data.data;
+          this.showAverageUsage();
         }
-        // 发送 GET 请求获取图表数据
-        const response = await axios.get('/api/piechart/data', { params });
-        this.chartData = response.data; // 将获取的数据赋值给 chartData
-      } catch (err) {
-        console.error('获取饼图数据失败:', err); // 错误处理
+      } catch (error) {
+        console.error("获取教室列表失败:", error);
       }
     },
-    // 渲染 ECharts 图表
-    renderChart() {
-      const chartElement = this.$refs.chart; // 获取图表容器的 DOM 元素
-      if (!chartElement) {
-        console.error('DOM element not found'); // 如果 DOM 元素不存在，输出错误信息
+
+    showAverageUsage() {
+      const usages = Object.values(this.analysis.classroom_usage);
+      if (usages.length > 0) {
+        const averageUsage =
+          usages.reduce((sum, val) => sum + val, 0) / usages.length;
+        this.chartData = [
+          { value: averageUsage, name: "已使用" },
+          { value: 1 - averageUsage, name: "未使用" },
+        ];
+        this.chartTitle = "总教室利用率";
+        this.renderChart();
+      }
+    },
+
+    handleClassroomChange(classroomId) {
+      if (!classroomId) {
+        this.showAverageUsage();
         return;
       }
 
-      const myChart = echarts.init(chartElement); // 初始化 ECharts 实例
+      // 当前直接从本地analysis数据获取（未来使用Vuex时改为从this.analysis获取）
+      const usage = this.analysis.classroom_usage[classroomId] || 0;
+      this.chartData = [
+        { value: usage, name: "已使用" },
+        { value: 1 - usage, name: "未使用" },
+      ];
+
+      const selectedClassroom = this.classroomOptions.find(
+        (item) => item.ID === classroomId
+      );
+      this.chartTitle = selectedClassroom
+        ? `${selectedClassroom.Name} 教室利用率`
+        : "教室利用率";
+
+      this.renderChart();
+    },
+
+    renderChart() {
+      const chartElement = this.$refs.chart;
+      if (!chartElement) {
+        console.error("DOM element not found");
+        return;
+      }
+
+      const myChart = echarts.init(chartElement);
       const option = {
         title: {
-          text: this.chartTitle, // 动态绑定图表标题
-          left: 'center', // 标题居中
+          text: this.chartTitle,
+          left: "center",
         },
         tooltip: {
-          trigger: 'item', // 提示框触发方式为数据项
+          trigger: "item",
+          formatter: "{a} <br/>{b}: {c} ({d}%)",
         },
         legend: {
-          orient: 'vertical', // 图例垂直排列
-          left: 'left', // 图例居左
+          orient: "vertical",
+          left: "left",
         },
         series: [
           {
-            name: '访问来源', // 系列名称
-            type: 'pie', // 图表类型为饼图
-            radius: '70%', // 饼图半径
-            data: this.chartData, // 绑定图表数据
+            name: "教室利用率",
+            type: "pie",
+            radius: "70%",
+            avoidLabelOverlap: false,
+            itemStyle: {
+              borderRadius: 10,
+              borderColor: "#fff",
+              borderWidth: 2,
+            },
+            data: this.chartData,
             emphasis: {
               itemStyle: {
-                shadowBlur: 10, // 高亮时的阴影模糊大小
-                shadowOffsetX: 0, // 高亮时的阴影水平偏移
-                shadowColor: 'rgba(0, 0, 0, 0.5)', // 高亮时的阴影颜色
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: "rgba(0, 0, 0, 0.5)",
               },
+            },
+            label: {
+              show: true,
+              formatter: "{b}: {d}%",
+            },
+            labelLine: {
+              show: true,
             },
           },
         ],
+        color: ["#67C23A", "#F56C6C"],
       };
 
-      myChart.setOption(option); // 设置图表配置项
-    },
-
-    // 更新图表标题
-    updateChartTitle(selectedOptions) {
-      if (selectedOptions.length === 0) {
-        // 如果未选择任何选项，显示“总教室利用率”
-        this.chartTitle = '总教室利用率';
-      } else {
-        // 如果选择了选项，拼接标题
-        const labels = selectedOptions.map((option, index) => {
-          // 找到对应的 label
-          let currentLevel = this.options;
-          for (let i = 0; i <= index; i++) {
-            const found = currentLevel.find(item => item.value === option);
-            if (found) {
-              currentLevel = found.children || [];
-              if (i === index) {
-                return found.label;
-              }
-            }
-          }
-          return '';
-        }).filter(label => label); // 过滤掉空值
-        this.chartTitle = `${labels.join('-')} 教室利用率`;
-      }
-    },
-  },
-  
-  
-  watch: {
-    // 监听 selectedOptions 的变化
-    selectedOptions(newVal) {
-      // 更新图表标题
-      this.updateChartTitle(newVal);
-      
-      if (newVal.length > 0) {
-        // 如果有选中的教室，获取对应数据并渲染图表
-        this.fetchData(newVal).then(() => {
-          this.renderChart();
-        });
-      } else {
-        // 如果没有选中的教室，获取全部数据并渲染图表
-        this.fetchData([]).then(() => {
-          this.renderChart();
-        });
-      }
+      myChart.setOption(option);
+      myChart.resize();
     },
   },
 };
 </script>
 
 <style scoped>
-/* 容器样式 */
 .pie-chart-container {
   padding: 20px;
   background-color: #ffffff;
@@ -185,7 +225,6 @@ export default {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 标题样式 */
 .chart-title {
   text-align: left;
   margin-bottom: 20px;
@@ -198,7 +237,6 @@ export default {
   font-weight: bold;
 }
 
-/* 图表容器样式 */
 .chart-wrapper {
   margin-bottom: 20px;
 }
@@ -213,7 +251,6 @@ export default {
   height: 400px;
 }
 
-/* 教室选择器样式 */
 .classroom-selector {
   display: flex;
   align-items: center;
@@ -227,11 +264,6 @@ export default {
   margin-right: 10px;
 }
 
-.cascader {
-  width: 300px;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
   .classroom-selector {
     flex-direction: column;
@@ -242,7 +274,7 @@ export default {
     margin-bottom: 10px;
   }
 
-  .cascader {
+  .el-select {
     width: 100%;
   }
 }

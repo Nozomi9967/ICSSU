@@ -120,6 +120,7 @@
 <script>
 import { SERVER_URL, SCHEDULE_PREFIX } from "@config";
 import axios from "axios";
+import { List } from "echarts";
 export default {
   name: "RulesForm",
   data() {
@@ -237,6 +238,12 @@ export default {
       semesterWeeks: Array.from({ length: 18 }, (_, i) => i + 1),
     };
   },
+  props: {
+    list: {
+      type: Array,
+      default: [],
+    },
+  },
   computed: {
     getAutoScheduleUrl() {
       return `${this.serverUrl}${this.schedulePrefix}/ga`;
@@ -254,7 +261,7 @@ export default {
           });
           // 封装请求数据
           const requestData = {
-            schedule_ids: [],
+            schedule_ids: this.list,
             rules: this.rules,
           };
           axios
