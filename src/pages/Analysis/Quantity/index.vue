@@ -12,145 +12,223 @@
 
     <div class="teacher-selector">
       <span class="selector-label">选择教师</span>
-      <!-- 单选可搜索的下拉框 -->
       <el-select
-        v-model="selectedValue"
+        v-model="selectedTeacherId"
         filterable
-        placeholder="请选择"
+        placeholder="请选择教师"
         clearable
-        @change="handleChange"
+        @change="handleTeacherChange"
+        :loading="loading"
       >
         <el-option
-          v-for="item in options"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
+          v-for="teacher in teacherOptions"
+          :key="teacher.id"
+          :label="teacher.label"
+          :value="teacher.id"
         />
       </el-select>
-
-      <!-- 显示当前选中的值 -->
-      <div class="selector-label">
-        当前选中的值：{{ selectedValue || "未选择（显示所有教师平均数据）" }}
-      </div>
     </div>
   </div>
 </template>
 
 <script>
-import * as echarts from "echarts";
-import axios from "axios"; // 引入 axios
+import * as echarts from 'echarts';
 import { mapState } from "vuex";
+import axios from 'axios';
 
 export default {
-  name: "BarChart",
+  name: 'SimpleTeacherWorkloadChart',
   data() {
     return {
-      // 选中的值
-      selectedValue: "",
-      // 下拉框选项
-      options: [],
-      // ECharts 实例
+      selectedTeacherId: null,
+      teacherOptions: [],
       chart: null,
+      averageWorkload: 0,
+      currentTeacherWorkload: 0,
+      loading: false,
+      teacherMap: {} // 存储教师ID和名称的映射
     };
-  },
-  mounted() {
-    this.initChart();
-    this.fetchTeachers(); // 获取老师信息
-    this.fetchAverageData(); // 初始加载所有教师的平均数据
-    console.log(this.analysis);
   },
   computed: {
     ...mapState(["analysis"]),
   },
+  mounted() {
+    this.initChart();
+    this.fetchTeachers();
+  },
   methods: {
     initChart() {
-      // 基于准备好的dom，初始化echarts实例
       this.chart = echarts.init(this.$refs.barChart);
+      this.updateChart();
+    },
 
-      // 初始图表配置
-      const option = {
-        title: {
-          text: "教师排课量",
-        },
-        tooltip: {},
-        xAxis: {
-          data: ["日平均", "周一", "周二", "周三", "周四", "周五"],
-        },
-        yAxis: {},
-        series: [
-          {
-            name: "排课量",
-            type: "bar",
-            data: [], // 初始数据为空
-          },
-        ],
-      };
+    async fetchTeachers() {
+      this.loading = true;
+      try {
+        const response = await axios.get('http://localhost:8080/teacher/queryall');
+        const teachers = response.data.data || [];
+        
+        // 构建教师选项和映射表
+        this.teacherOptions = teachers.map(teacher => {
+          this.teacherMap[teacher.ID] = teacher.Name;
+          return {
+            id: teacher.ID,
+            label: `${teacher.Name} (${teacher.ID})`
+          };
+        });
 
-      // 使用刚指定的配置项和数据显示图表。
-      this.chart.setOption(option);
-    },
-    fetchTeachers() {
-      // 从后端获取老师信息
-      axios
-        .get(
-          "http://127.0.0.1:4523/m1/5962874-5651024-default/teacher/queryall"
-        ) // 替换为你的后端 API 地址
-        .then((response) => {
-          this.options = response.data.data.map((teacher) => ({
-            value: teacher.ID,
-            label: teacher.Name,
-          }));
-        })
-        .catch((error) => {
-          console.error("获取老师信息失败:", error);
-        });
-    },
-    fetchAverageData() {
-      // 获取所有教师的平均排课数据
-      axios
-        .get("/api/average-schedule") // 替换为你的后端 API 地址
-        .then((response) => {
-          const averageData = response.data; // 假设返回的数据格式为 [5, 20, 36, 10, 10, 10]
-          this.updateChart(averageData);
-        })
-        .catch((error) => {
-          console.error("获取平均排课数据失败:", error);
-        });
-    },
-    handleChange(selectedValue) {
-      if (selectedValue) {
-        // 根据选择的老师 ID 获取柱状图数据
-        axios
-          .get(`/api/teacher-schedule/${selectedValue}`) // 替换为你的后端 API 地址
-          .then((response) => {
-            const chartData = response.data; // 假设返回的数据格式为 [5, 20, 36, 10, 10, 10]
-            this.updateChart(chartData);
-          })
-          .catch((error) => {
-            console.error("获取排课数据失败:", error);
-          });
-      } else {
-        // 未选择时，显示所有教师的平均数据
-        this.fetchAverageData();
+        // 计算平均工作量
+        this.calculateAverageWorkload();
+      } catch (error) {
+        console.error('获取教师列表失败:', error);
+        this.$message.error('获取教师列表失败');
+      } finally {
+        this.loading = false;
       }
     },
-    updateChart(data) {
-      // 更新图表数据
-      const option = {
-        series: [
-          {
-            data: data,
-          },
-        ],
-      };
-      this.chart.setOption(option);
+
+    calculateAverageWorkload() {
+      if (!this.analysis?.teacher_workload) return;
+      
+      const workloads = Object.values(this.analysis.teacher_workload)
+        .filter(val => val > 0);
+      
+      if (workloads.length === 0) return;
+      
+      this.averageWorkload = Math.round(workloads.reduce((sum, val) => sum + val, 0) / workloads.length);
+      this.updateChart();
     },
+
+    handleTeacherChange(teacherId) {
+      if (teacherId && this.analysis?.teacher_workload[teacherId]) {
+        this.currentTeacherWorkload = this.analysis.teacher_workload[teacherId];
+      } else {
+        this.currentTeacherWorkload = 0;
+      }
+      this.updateChart();
+    },
+
+    updateChart() {
+      if (!this.chart) return;
+
+      const series = [
+        {
+          name: '全体教师平均',
+          type: 'bar',
+          barWidth: this.selectedTeacherId ? '40%' : '60%',
+          data: [this.averageWorkload],
+          itemStyle: {
+            color: '#61a0a8',
+            emphasis: {
+              color: '#7ab8c0',
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          },
+          label: {
+            show: true,
+            position: 'top',
+            formatter: '{c}',
+            color: '#333'
+          },
+          emphasis: {
+            itemStyle: {
+              color: '#7ab8c0'
+            },
+            label: {
+              show: true
+            }
+          }
+        }
+      ];
+
+      if (this.selectedTeacherId) {
+        const teacherName = this.teacherMap[this.selectedTeacherId] || this.selectedTeacherId;
+        series.push({
+          name: `当前教师: ${teacherName}`,
+          type: 'bar',
+          barWidth: '40%',
+          data: [this.currentTeacherWorkload],
+          itemStyle: {
+            color: '#c23531',
+            emphasis: {
+              color: '#d15f5b',
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          },
+          label: {
+            show: true,
+            position: 'top',
+            formatter: '{c}',
+            color: '#333'
+          },
+          emphasis: {
+            itemStyle: {
+              color: '#d15f5b'
+            },
+            label: {
+              show: true
+            }
+          }
+        });
+      }
+
+      const option = {
+        title: {
+          text: this.selectedTeacherId ? '教师排课量对比' : '教师平均排课量',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'item',
+          axisPointer: {
+            type: 'shadow'
+          },
+          formatter: params => {
+            return `${params.seriesName}<br/>课时数: ${params.value}`;
+          }
+        },
+        legend: {
+          data: series.map(item => item.name),
+          top: 30
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: ['排课量'],
+          axisLabel: {
+            interval: 0,
+            rotate: 0
+          }
+        },
+        yAxis: {
+          type: 'value',
+          name: '课时数',
+          nameLocation: 'middle',
+          nameGap: 30
+        },
+        series: series
+      };
+
+      this.chart.setOption(option, true);
+    }
   },
-};
+  beforeDestroy() {
+    if (this.chart) {
+      this.chart.dispose();
+    }
+  }
+}
 </script>
 
 <style scoped>
-/* 容器样式 */
 .bar-chart-container {
   padding: 20px;
   background-color: #ffffff;
@@ -158,7 +236,6 @@ export default {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* 标题样式 */
 .chart-title {
   text-align: left;
   margin-bottom: 20px;
@@ -171,7 +248,6 @@ export default {
   font-weight: bold;
 }
 
-/* 图表容器样式 */
 .chart-wrapper {
   margin-bottom: 20px;
 }
@@ -186,7 +262,6 @@ export default {
   height: 500px;
 }
 
-/* 教室选择器样式 */
 .teacher-selector {
   display: flex;
   align-items: center;
@@ -200,23 +275,14 @@ export default {
   margin-right: 10px;
 }
 
-.cascader {
-  width: 300px;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
-  .classroom-selector {
+  .teacher-selector {
     flex-direction: column;
     align-items: flex-start;
   }
 
   .selector-label {
     margin-bottom: 10px;
-  }
-
-  .cascader {
-    width: 100%;
   }
 }
 </style>
