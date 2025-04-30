@@ -74,6 +74,6 @@ export default new VueRouter({
     {
       path: '/teacher',
       component: Teacher
-    }
+    },
   ]
 })

@@ -59,6 +59,10 @@
             我的课表</el-menu-item
           >
 
+          <el-menu-item v-if="identity == admin" index="8" @click="toSchedule">
+            <i class="el-icon-s-order"></i>
+            排课任务</el-menu-item>
+
           <!-- <el-menu-item v-if="identity == admin" index="8" @click="toFlow">
               <i class="el-icon-tickets"></i>
               <span>流程审批</span>
